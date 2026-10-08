@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="format-detection" content="telephone=no">
+  <title>Dostyk Plaza 3D</title>
+  <link rel="icon" href="data:,">
+  <!-- Ступень 1: заглушка моста (window.DostykViewer + событие booting). В сборке инлайнится (scripts/build-embed.mjs). -->
+  <script>(function () {
+  'use strict';
+  if (window.DostykViewer && window.DostykViewer._stub) return;
+
+  var PROTOCOL = 1;
+  var QUEUE_MAX = 50;
+  var params = new URLSearchParams(location.search);
+
+  // Список разрешённых origin хоста (?hostOrigin=a,b). Пусто → тот же origin; для file:// (origin "null") → '*'.
+  var cfg = window.DostykConfig || {};
+  var hostOrigins = (params.get('hostOrigin') || cfg.hostOrigin || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+  var selfOrigin = location.origin;
+  var parentTarget = hostOrigins.length ? hostOrigins[0] : (selfOrigin && selfOrigin !== 'null' ? selfOrigin : '*');
+
+  function originAllowed(origin) {
+    if (hostOrigins.indexOf('*') >= 0) return true;
+    if (origin === '' ) return true;                       // сообщение от нативного хоста (RN/Android)
+    if (origin === selfOrigin) return true;                // тот же origin (в т.ч. "null" для file:// ↔ file://)
+    return hostOrigins.indexOf(origin) >= 0;
+  }
+
+  /** Исходящий канал: первый доступный хост; CustomEvent — всегда (для слушателей внутри страницы). */
+  function post(msg) {
+    var json = typeof msg === 'string' ? msg : JSON.stringify(msg);
+    var via = 'event';
+    try {
+      var w = window;
+      if (w.DostykHost && typeof w.DostykHost.postMessage === 'function') {
+        w.DostykHost.postMessage(json); via = 'DostykHost';                         // Flutter / Android
+      } else if (w.webkit && w.webkit.messageHandlers && w.webkit.messageHandlers.DostykHost) {
+        w.webkit.messageHandlers.DostykHost.postMessage(json); via = 'webkit';     // iOS WKWebView
+      } else if (w.ReactNativeWebView && typeof w.ReactNativeWebView.postMessage === 'function') {
+        w.ReactNativeWebView.postMessage(json); via = 'rn';                       // React Native
+      } else if (w.parent && w.parent !== w) {
+        w.parent.postMessage(json, parentTarget); via = 'parent';                  // iframe
+      }
+    } catch (e) { via = 'error'; }
+    try { window.dispatchEvent(new CustomEvent('dostyk:message', { detail: json })); } catch (e2) { /* старый WebView */ }
+    return via;
+  }
+
+  function parse(m) {
+    if (m && typeof m === 'object') return m;
+    if (typeof m !== 'string' || m.charAt(0) !== '{') return null;
+    try { return JSON.parse(m); } catch (e) { return null; }
+  }
+
+  var V = {
+    _stub: true,
+    _q: [],
+    protocol: PROTOCOL,
+    /** Команда от хоста (JSON-строка или объект). До загрузки модуля — в очередь (не больше 50). */
+    receive: function (m) {
+      var cmd = parse(m);
+      if (!cmd || cmd.dp !== PROTOCOL || cmd.kind !== 'cmd') return false;
+      if (V._q.length >= QUEUE_MAX) {
+        post({ dp: PROTOCOL, kind: 'res', id: cmd.id, ok: false, error: { code: 'E_QUEUE_FULL', message: 'queue limit ' + QUEUE_MAX + ' before ready' } });
+        return false;
+      }
+      V._q.push(cmd);
+      return true;
+    },
+    _post: post,
+    _cfg: { hostOrigins: hostOrigins, parentTarget: parentTarget, originAllowed: originAllowed },
+    _t0: Date.now(),
+  };
+  window.DostykViewer = V;
+
+  // Входящие postMessage (iframe; RN на Android шлёт в document). receive берём «вживую» — модуль его подменит.
+  function onMessage(e) {
+    if (!originAllowed(e.origin)) return;
+    var cmd = parse(e.data);
+    if (!cmd || cmd.kind !== 'cmd' || typeof cmd.dp !== 'number') return;
+    window.DostykViewer.receive(cmd);
+  }
+  window.addEventListener('message', onMessage);
+  document.addEventListener('message', onMessage);
+  V._listening = true;
+
+  post({ dp: PROTOCOL, kind: 'evt', name: 'booting', payload: { protocol: PROTOCOL } });
+})();
+</script>
+  <style>html,body{-webkit-tap-highlight-color:transparent;background:#dfe6ec;height:100%;margin:0;overflow:hidden}body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;font:13px/1.35 Onest,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Noto Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif}#app{position:fixed;top:0;bottom:0;left:0;right:0}html.dp-night,html.dp-night body{background:#0b1020}</style>
+  <!-- Ступень 2: проверка WebGL2 и постер (SVG-план + прогресс), сторож модуля. -->
+  <script>(function () {
+  'use strict';
+  if (window.DostykPoster) return;
+  var params = new URLSearchParams(location.search);
+  var hash = new URLSearchParams(location.hash.slice(1));
+  var cfg = window.DostykConfig || {};
+  var lang = params.get('lang') || hash.get('lang') || cfg.lang || 'ru';
+  // ночной пресет: тёмный постер сразу (без белой вспышки перед тёмной сценой в тёмной теме хоста)
+  var night = (params.get('preset') || hash.get('preset') || cfg.preset) === 'night';
+  if (night) {
+    document.documentElement.className += ' dp-night';
+    var csm = document.querySelector('meta[name="color-scheme"]');
+    if (csm) csm.setAttribute('content', 'dark');
+  }
+  var T = {
+    ru: { loading: 'Загрузка 3D-модели…', setup: 'Подготовка сцены…', compile: 'Подготовка графики…', failed: '3D-модель не загрузилась', nogl: 'Схема без 3D' },
+    kk: { loading: '3D-модель жүктелуде…', setup: 'Сахна дайындалуда…', compile: 'Графика дайындалуда…', failed: '3D-модель жүктелмеді', nogl: '3D-сіз сызба' },
+    en: { loading: 'Loading 3D model…', setup: 'Preparing scene…', compile: 'Preparing graphics…', failed: '3D model failed to load', nogl: 'Plan view (no 3D)' },
+  };
+  var t = T[lang] || T.ru;
+
+  // --- проверка WebGL2 (контекст сразу освобождаем)
+  var gl2 = false, reason = '';
+  try {
+    var c = document.createElement('canvas');
+    var gl = c.getContext('webgl2', { failIfMajorPerformanceCaveat: false });
+    gl2 = !!gl;
+    if (!gl2) reason = 'webgl2 context unavailable';
+    var lose = gl && gl.getExtension('WEBGL_lose_context');
+    if (lose) lose.loseContext();
+  } catch (e) { reason = String(e && e.message || e); }
+  window.__dpBoot = { webgl2: gl2, reason: reason, t0: Date.now() };
+
+  // --- постер. План: контур ТРЦ из data/building.json (упрощён до 0,5 м, x = восток, y = −север).
+  var OUTLINE = 'M-75.5 70L22 44.5L33 41.5L65.5 33L73 60L147 40L139 12L131.5 -15.5L117.5 -65L107 -58.5L105 -56.5L103.5 -54.5L92 -54.5L92 -52L91 -56.5L90 -59.5L88.5 -62L86 -64L82.5 -65.5L79 -66.5L75.5 -65L73 -63L70.5 -60L69.5 -54.5L70 -49.5L68.5 -47L65.5 -44L62.5 -48.5L56 -53L47.5 -58.5L49.5 -61.5L42 -66.5L35 -71.5L32 -67L28.5 -68.5L21.5 -70L-91 -61.5L-101.5 -61L-107 -62L-111.5 -62L-118 -61L-123 -59.5L-128 -56.5L-132.5 -52L-136.5 -47.5L-141 -39.5L-143 -34.5L-144 -29L-144 -23.5L-143.5 -19L-142 -13.5L-128.5 34L-127 39.5L-119.5 38.5L-112 61L-97 56.5L-91.5 74L-81.5 71.5Z';
+  var CUBE = 'M49.5 -61.5L42 -66.5L35 -71.5L32 -67L28.5 -61.5L43 -51.5L47.5 -58.5Z';
+  var PAVILION = 'M92 -52L91 -56.5L90 -59.5L88.5 -62L86 -64L82.5 -65.5L79 -66.5L75.5 -65L73 -63L70.5 -60L69.5 -54.5L70 -49.5L72.5 -43.5L75.5 -37L79.5 -33L85 -32L90 -35L92 -39L92.5 -42L92.5 -47Z';
+  var SKY_N = 'M-76 -31L-74.5 -17.5L-60 -21.5L-48 -25L-36 -27L-26 -28L-14.5 -28.5L-1 -28L10 -27.5L11.5 -42L-1.5 -41.5L-13 -41.5L-27 -42L-39.5 -40.5L-53 -39L-64.5 -35.5Z';
+  var SKY_S = 'M-50.5 33.5L-37 32L-23 28L-11.5 25L2 21L8 19L2 5L-4.5 7.5L-16.5 11L-28 14L-39.5 16L-51.5 18.5L-64 19L-64 33.5Z';
+
+  var css = '' +
+    '#dp-poster{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+    'background:linear-gradient(180deg,#E9EEF2 0%,#DFE6EC 62%,#D9D4CA 100%);color:#5E584E;' +
+    'font:500 12px/1.4 Onest,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;transition:opacity .45s ease;}' +
+    '#dp-poster.dp-hide{opacity:0;pointer-events:none}' +
+    '#dp-poster svg{width:min(78vw,520px);height:auto;overflow:visible}' +
+    '#dp-poster .dp-o{fill:#F3F0E9;stroke:#B7AC94;stroke-width:1.1;vector-effect:non-scaling-stroke;stroke-linejoin:round;' +
+    'stroke-dasharray:4000;stroke-dashoffset:4000;animation:dp-draw 2.2s ease-out forwards}' +
+    '#dp-poster .dp-sh{fill:rgba(60,52,40,.10);transform:translate(1.6px,2.4px)}' +
+    '#dp-poster .dp-c{fill:#A9C3C6;stroke:#7F9DA2;stroke-width:.8;vector-effect:non-scaling-stroke}' +
+    '#dp-poster .dp-p{fill:#E6DFCF;stroke:#B7AC94;stroke-width:.8;vector-effect:non-scaling-stroke}' +
+    '#dp-poster .dp-s{fill:none;stroke:#C9BFA9;stroke-width:.8;stroke-dasharray:3 2;vector-effect:non-scaling-stroke}' +
+    '#dp-poster .dp-w{margin-top:22px;letter-spacing:.42em;font-weight:600;font-size:13px;color:#4E483F;padding-left:.42em}' +
+    '#dp-poster .dp-bar{margin-top:14px;width:160px;height:2px;background:rgba(94,88,78,.15);border-radius:2px;overflow:hidden}' +
+    '#dp-poster .dp-bar i{display:block;height:100%;width:6%;background:#8C7A57;transition:width .3s ease}' +
+    '#dp-poster .dp-t{margin-top:10px;opacity:.75;min-height:1.4em;text-align:center;padding:0 16px}' +
+    '#dp-poster.dp-fail .dp-bar{display:none}#dp-poster.dp-fail .dp-o{animation:none;stroke-dashoffset:0}' +
+    // ночь: тёмный градиент, светлые линии, золотистая полоса
+    '#dp-poster.dp-dark{background:linear-gradient(180deg,#0B1020 0%,#11172A 62%,#151B2E 100%);color:#AEB5C4}' +
+    '#dp-poster.dp-dark .dp-o{fill:#1C2336;stroke:#4A5470}#dp-poster.dp-dark .dp-sh{fill:rgba(0,0,0,.35)}' +
+    '#dp-poster.dp-dark .dp-c{fill:#3C5A78;stroke:#6F8DB0}#dp-poster.dp-dark .dp-p{fill:#262E44;stroke:#4A5470}' +
+    '#dp-poster.dp-dark .dp-s{stroke:#3A4360}#dp-poster.dp-dark .dp-w{color:#C9CFDB}' +
+    '#dp-poster.dp-dark .dp-bar{background:rgba(201,207,219,.16)}#dp-poster.dp-dark .dp-bar i{background:#C9A86A}' +
+    '@keyframes dp-draw{to{stroke-dashoffset:0}}' +
+    '@media (prefers-reduced-motion:reduce){#dp-poster .dp-o{animation:none;stroke-dashoffset:0}#dp-poster{transition:opacity .2s}}';
+  var style = document.createElement('style');
+  style.textContent = css;
+  (document.head || document.documentElement).appendChild(style);
+
+  var el = document.createElement('div');
+  el.id = 'dp-poster';
+  if (night) el.className = 'dp-dark';
+  el.setAttribute('role', 'status');
+  el.setAttribute('aria-live', 'polite');
+  el.innerHTML =
+    '<svg viewBox="-152 -82 304 164" aria-hidden="true">' +
+    '<path class="dp-sh" d="' + OUTLINE + '"/>' +
+    '<path class="dp-o" d="' + OUTLINE + '"/>' +
+    '<path class="dp-s" d="' + SKY_N + '"/><path class="dp-s" d="' + SKY_S + '"/>' +
+    '<path class="dp-p" d="' + PAVILION + '"/><path class="dp-c" d="' + CUBE + '"/>' +
+    '</svg>' +
+    '<div class="dp-w">DOSTYK PLAZA</div>' +
+    '<div class="dp-bar"><i></i></div>' +
+    '<div class="dp-t">' + t.loading + '</div>';
+  // <body> ещё нет: вешаем на <html>, позже переносим в body
+  document.documentElement.appendChild(el);
+  document.addEventListener('DOMContentLoaded', function () {
+    if (el.parentNode && document.body && el.parentNode !== document.body) document.body.appendChild(el);
+  });
+
+  var bar = el.querySelector('.dp-bar i');
+  var txt = el.querySelector('.dp-t');
+  var failed = false;
+
+  var P = {
+    el: el,
+    progress: function (f, label) {
+      if (failed) return;
+      bar.style.width = Math.max(6, Math.min(100, Math.round(f * 100))) + '%';
+      if (label) txt.textContent = label;
+    },
+    text: function (s) { txt.textContent = s; },
+    hide: function () {
+      if (failed) return;
+      el.classList.add('dp-hide');
+      setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 600);
+    },
+    /** Модуль не загрузился: постер остаётся, команды получают ошибку, событие error уходит хосту. */
+    fail: function (code, message) {
+      if (failed) return;
+      failed = true;
+      el.classList.add('dp-fail');
+      el.classList.remove('dp-hide');
+      txt.textContent = t.failed;
+      var V = window.DostykViewer;
+      if (!V || !V._post) return;
+      V._post({ dp: 1, kind: 'evt', name: 'error', payload: { code: code, message: message || '', fatal: true } });
+      var answer = function (cmd) {
+        if (!cmd || !cmd.id) return;
+        if (cmd.name === 'getState') {
+          V._post({ dp: 1, kind: 'res', id: cmd.id, ok: true, result: { protocol: 1, renderer: 'none', mode: 'exterior', level: null, selected: null, ready: false, error: code } });
+        } else {
+          V._post({ dp: 1, kind: 'res', id: cmd.id, ok: false, error: { code: code, message: 'viewer module not running' } });
+        }
+      };
+      var q = V._q || [];
+      V._q = [];
+      q.forEach(answer);
+      V.receive = function (m) {
+        var cmd = m;
+        if (typeof m === 'string') { try { cmd = JSON.parse(m); } catch (e) { return false; } }
+        if (cmd && cmd.dp === 1 && cmd.kind === 'cmd') answer(cmd);
+        return false;
+      };
+    },
+    texts: t,
+  };
+  window.DostykPoster = P;
+
+  // --- сторож модуля: сетевой сбой <script type=module> или модуль не стартовал к событию load
+  window.addEventListener('error', function (e) {
+    var s = e && e.target;
+    if (s && s.tagName === 'SCRIPT' && s.type === 'module' && !window.__dpModuleStarted) P.fail('E_MODULE_LOAD', 'module script failed: ' + (s.src || 'inline'));
+  }, true);
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      if (!window.__dpModuleStarted) P.fail('E_MODULE_LOAD', 'viewer module did not start (unsupported browser or load error)');
+    }, 1500);
+  });
+})();
+</script>
+  <script type="module" crossorigin src="./assets/index-Bu5JFgvs.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <noscript><p style="position:fixed;inset:auto 0 40% 0;text-align:center;color:#5E584E">Dostyk Plaza 3D: нужен JavaScript</p></noscript>
+  <!-- Ступень 3: модуль вьюера (ES2020; старые WebView, не умеющие модули, остаются на постере → E_MODULE_LOAD). -->
+</body>
+</html>
