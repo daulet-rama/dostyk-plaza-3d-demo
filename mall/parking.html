@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <script>window.DostykConfig=Object.assign({app:'parking'},window.DostykConfig||{});</script>
+  <meta name="robots" content="noindex, nofollow">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light">
   <meta name="format-detection" content="telephone=no">
@@ -99,10 +100,14 @@
   var params = new URLSearchParams(location.search);
   var hash = new URLSearchParams(location.hash.slice(1));
   var cfg = window.DostykConfig || {};
-  // язык без lang — казахский, если браузер телефона на kk (как main.js), иначе русский
-  var navKk = false;
-  try { navKk = /^kk\b/i.test(navigator.language || (navigator.languages || [])[0] || ''); } catch (e) { /* без navigator */ }
-  var lang = params.get('lang') || hash.get('lang') || cfg.lang || (navKk ? 'kk' : 'ru');
+  // язык без lang (как navLang в main.js): kk — первый язык телефона казахский; en — английский без ru/kk в списке; иначе ru
+  var navL = 'ru';
+  try {
+    var nl = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ''];
+    var n0 = navigator.language || nl[0] || '';
+    navL = /^kk\b/i.test(n0) ? 'kk' : /^en\b(?!-(kz|ru)\b)/i.test(n0) && !/(^|,)(ru|kk)\b/i.test(nl.join(',')) ? 'en' : 'ru';
+  } catch (e) { /* без navigator */ }
+  var lang = params.get('lang') || hash.get('lang') || cfg.lang || navL;
   // ночной пресет: тёмный постер сразу (без белой вспышки перед тёмной сценой в тёмной теме хоста)
   var night = (params.get('preset') || hash.get('preset') || cfg.preset) === 'night';
   if (night) {
@@ -113,11 +118,14 @@
   // qr, qrOpen — заставка по ссылке стойки; mall, parking — подзаголовок страниц mall.html / parking.html (kk и en — черновик)
   var T = {
     ru: { loading: 'Загрузка 3D-модели…', setup: 'Подготовка сцены…', compile: 'Подготовка графики…', failed: '3D-модель не загрузилась', nogl: 'Схема без 3D',
-      qr: 'Вы у стойки {id}', qrOpen: 'открываем план…', mall: 'ТРЦ · 3 этажа', parking: 'Паркинг' },
+      qr: 'Вы у стойки {id}', qrOpen: 'открываем план…', mall: 'ТРЦ · 3 этажа', parking: 'Паркинг',
+      net: 'Нет связи — часть карты не загрузилась. Обновите страницу', refresh: 'Обновить' },
     kk: { loading: '3D-модель жүктелуде…', setup: 'Сахна дайындалуда…', compile: 'Графика дайындалуда…', failed: '3D-модель жүктелмеді', nogl: '3D-сіз сызба',
-      qr: 'Сіз {id} тақтайшасының жанындасыз', qrOpen: 'жоспар ашылуда…', mall: 'СОО · 3 қабат', parking: 'Тұрақ' },
+      qr: 'Сіз {id} тақтайшасының жанындасыз', qrOpen: 'жоспар ашылуда…', mall: 'СОО · 3 қабат', parking: 'Тұрақ',
+      net: 'Байланыс жоқ — картаның бір бөлігі жүктелмеді. Бетті жаңартыңыз', refresh: 'Жаңарту' },
     en: { loading: 'Loading 3D model…', setup: 'Preparing scene…', compile: 'Preparing graphics…', failed: '3D model failed to load', nogl: 'Plan view (no 3D)',
-      qr: 'You are at stand {id}', qrOpen: 'opening the map…', mall: 'Mall · 3 floors', parking: 'Parking' },
+      qr: 'You are at stand {id}', qrOpen: 'opening the map…', mall: 'Mall · 3 floors', parking: 'Parking',
+      net: 'No connection — part of the map did not load. Refresh the page', refresh: 'Refresh' },
   };
   var t = T[lang] || T.ru;
 
@@ -224,8 +232,10 @@
       if (label) txt.textContent = label;
     },
     text: function (s) { txt.textContent = s; },
-    hide: function () {
+    /** fast — посадка по QR: под заставкой уже кадр стойки, гасим быстрее (0,25 с вместо 0,45 с). */
+    hide: function (fast) {
       if (failed) return;
+      if (fast) el.style.transitionDuration = '.25s';
       el.classList.add('dp-hide');
       setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 600);
     },
@@ -260,6 +270,43 @@
     texts: t,
     /** Стойка QR из адреса ('QR-03') или null. */
     qr: qrId,
+    /**
+     * [w3v-F] Чанк вьюера не загрузился и повтор не помог (Chrome не перезапрашивает упавший модуль до перезагрузки):
+     * перезагрузить страницу — только в браузере (не во фрейме, http/https), один раз за 60 с (sessionStorage) и только если
+     * сайт отвечает (HEAD страницы; без сети перезагрузка дала бы страницу ошибки браузера вместо карты). → Promise<true> — пошла.
+     */
+    reloadOnce: function () {
+      try {
+        if (window.top !== window || !/^https?:$/.test(location.protocol)) return Promise.resolve(false);
+        if (Date.now() - (+sessionStorage.getItem('dp-chunk-reload') || 0) < 60000) return Promise.resolve(false);
+        return fetch(location.href.split('#')[0], { method: 'HEAD', cache: 'no-store' }).then(function (r) {
+          if (!r.ok) return false;
+          sessionStorage.setItem('dp-chunk-reload', String(Date.now()));
+          location.reload();
+          return true;
+        }).catch(function () { return false; });
+      } catch (e) { return Promise.resolve(false); }
+    },
+    /** [w3v-F] Плашка «Нет связи… Обновить» вверху (как floors.js: .dpf-netfail) — часть карты не загрузилась, перезагрузить сами не можем. */
+    netFail: function () {
+      if (!document.body || document.querySelector('.dpf-netfail')) return;
+      var n = document.createElement('div');
+      n.className = 'dpf-netfail';
+      n.setAttribute('role', 'alert');
+      n.style.cssText = 'position:fixed;left:12px;right:12px;margin:0 auto;top:calc(12px + env(safe-area-inset-top,0px));z-index:2147483000;' +
+        'display:flex;align-items:center;gap:12px;max-width:520px;box-sizing:border-box;padding:10px 12px 10px 16px;border-radius:14px;' +
+        'background:#1F2328;color:#fff;font:500 14px/1.35 Onest,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.25)';
+      var s = document.createElement('span'), b = document.createElement('button');
+      s.style.flex = '1 1 auto';
+      s.textContent = t.net;
+      b.type = 'button';
+      b.style.cssText = 'flex:none;border:0;border-radius:10px;padding:8px 12px;background:#fff;color:#1F2328;font:inherit;font-weight:600;cursor:pointer';
+      b.textContent = t.refresh;
+      b.addEventListener('click', function () { location.reload(); });
+      n.appendChild(s);
+      n.appendChild(b);
+      document.body.appendChild(n);
+    },
   };
   window.DostykPoster = P;
 
@@ -275,8 +322,8 @@
   });
 })();
 </script>
-  <script>(function(h){if(!/(?:^|[#&])qr=|route=from(?::|%3A)\s*QR/i.test(h))return;var a=["./assets/labels-B1hHNUTL.css","./assets/route-ui-aJm8Dcte.css","./assets/floors-ui-CMFtyjje.css","./assets/floors-oqvtk-D5.js","./assets/poly-ty6ODsPX.js","./assets/parking-09GPRS70.js","./assets/geometry-DRNxi0sX.js","./assets/level-ids-Cbzkv6MA.js","./assets/l1-BuWAg341.js","./assets/links-BweXbzLD.js","./assets/labels-DkSrFjxD.js","./assets/floors-build-CE1EL3OF.js","./assets/floors-fx-F3lTAir6.js","./assets/main-late-BWLi52ZW.js","./assets/main-data-floors-dSOrKgN1.js","./assets/l1-runtime-CMlW37Hn.js","./assets/l2-runtime-DdoIMO-1.js","./assets/l3-runtime-B16TtJ0V.js","./assets/route-runtime-C2ndbnrP.js","./assets/nav-L2-C1Q88krO.js","./assets/nav-L3-CGNS0QfV.js","./assets/route-api-DYxPbKI2.js","./assets/route-ui-Cke0XBOE.js","./assets/en-WsuGmDfR.js","./assets/floors-ui-CJmURPOw.js","./assets/popular-BWlhKhyV.js","./assets/dist-C7_-SdRL.js"];for(var i=0;i<a.length;i++){var l=document.createElement("link"),c=/\.css$/.test(a[i]);l.rel=c?"preload":"modulepreload";if(c)l.as="style";l.crossOrigin="";l.href=a[i];document.head.appendChild(l);}})(location.hash);</script>
-  <script type="module" crossorigin src="./assets/index-_NU24A1m.js"></script>
+  <script>(function(h){if(!/(?:^|[#&])qr=|route=from(?::|%3A)\s*QR/i.test(h))return;var a=["./assets/labels-B1hHNUTL.css","./assets/route-ui-DW-MgcP_.css","./assets/floors-ui-Db25KZqJ.css","./assets/floors-D1BXIZmK.js","./assets/poly-ty6ODsPX.js","./assets/parking-09GPRS70.js","./assets/geometry-DRNxi0sX.js","./assets/level-ids-Cbzkv6MA.js","./assets/l1-BuWAg341.js","./assets/links-BweXbzLD.js","./assets/labels-CPH3KI4Z.js","./assets/floors-build-Ef5mDOgY.js","./assets/floors-fx-ClBhRK3s.js","./assets/main-late-CPjmfHH_.js","./assets/main-data-floors-Ebltnr-L.js","./assets/l1-runtime-CMlW37Hn.js","./assets/l2-runtime-Bjycyw6C.js","./assets/l3-runtime-B-f2f6vp.js","./assets/route-runtime-ClAOufna.js","./assets/route-api-Bb-oPFPm.js","./assets/route-ui-BOzG6WXb.js","./assets/en-B4_OjFLY.js","./assets/floors-ui-DL6IYddR.js","./assets/popular-BWlhKhyV.js","./assets/dist-B1uTZsTQ.js"];for(var i=0;i<a.length;i++){var l=document.createElement("link"),c=/\.css$/.test(a[i]);l.rel=c?"preload":"modulepreload";if(c)l.as="style";l.crossOrigin="";l.href=a[i];document.head.appendChild(l);}})(location.hash);</script>
+  <script type="module" crossorigin src="./assets/index-qxK-aya6.js"></script>
 </head>
 <body>
   <div id="app"></div>
