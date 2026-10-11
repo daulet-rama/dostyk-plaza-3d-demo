@@ -2,13 +2,14 @@
 
 Интерактивная 3D-модель ТРЦ Dostyk Plaza (Алматы) для приложения Smart Plaza. Здесь лежит собранный вьюер (без исходников); сайт закрыт от поисковиков.
 
-[![«Где моя машина»: демо на модели подземного паркинга](car/preview.jpg)](https://daulet-rama.github.io/dostyk-plaza-3d-demo/car/car-demo.html)
+[![«ТРЦ · 3 этажа»: этажи 1–3, магазины и маршруты](mall/preview.jpg)](https://daulet-rama.github.io/dostyk-plaza-3d-demo/mall/mall.html)
 
 ## Версии
 
 | Версия | Что внутри | Открыть | Один файл |
 |---|---|---|---|
-| **v6 — «Где моя машина»** (10.10.2026) | демо для докладчика на модели паркинга: два способа узнать, где стоит машина гостя, и текст «Как это работает» | [режим 1](https://daulet-rama.github.io/dostyk-plaza-3d-demo/car/car-demo.html) · [режим 2](https://daulet-rama.github.io/dostyk-plaza-3d-demo/car/car-demo.html?variant=2) · [Как это работает](https://daulet-rama.github.io/dostyk-plaza-3d-demo/car/how-it-works.html) | [embed.html](https://daulet-rama.github.io/dostyk-plaza-3d-demo/car/embed.html?demo=car) |
+| **v7 — «ТРЦ · 3 этажа» и QR** (11.10.2026) | этажи 1–3 по планам управляющей компании, поиск по всем этажам, посадка по QR на телефоне, маршрут с эскалатором между этажами, паркинг и «Где моя машина» | [здание](https://daulet-rama.github.io/dostyk-plaza-3d-demo/mall/) · [ТРЦ](https://daulet-rama.github.io/dostyk-plaza-3d-demo/mall/mall.html) · [QR-03 на телефоне](https://daulet-rama.github.io/dostyk-plaza-3d-demo/mall/#qr=QR-03) · [демо «Найти путь»](https://daulet-rama.github.io/dostyk-plaza-3d-demo/mall/?demo=route) · [для докладчика](https://daulet-rama.github.io/dostyk-plaza-3d-demo/mall/mall.html?present=1) · [QR-коды](https://daulet-rama.github.io/dostyk-plaza-3d-demo/mall/qr.html) · [паркинг](https://daulet-rama.github.io/dostyk-plaza-3d-demo/mall/parking.html) | [embed.html](https://daulet-rama.github.io/dostyk-plaza-3d-demo/mall/embed.html) |
+| v6 — «Где моя машина» (10.10.2026) | демо для докладчика на модели паркинга: два способа узнать, где стоит машина гостя, и текст «Как это работает» | [режим 1](https://daulet-rama.github.io/dostyk-plaza-3d-demo/car/car-demo.html) · [режим 2](https://daulet-rama.github.io/dostyk-plaza-3d-demo/car/car-demo.html?variant=2) · [Как это работает](https://daulet-rama.github.io/dostyk-plaza-3d-demo/car/how-it-works.html) | [embed.html](https://daulet-rama.github.io/dostyk-plaza-3d-demo/car/embed.html?demo=car) |
 | v5 — тени (09.10.2026) | всё из v4 + тени солнца по эталону Blender Cycles, новый вечер | [shadows/](https://daulet-rama.github.io/dostyk-plaza-3d-demo/shadows/) | [embed.html](https://daulet-rama.github.io/dostyk-plaza-3d-demo/shadows/embed.html) |
 | v4 — «Найти путь» | QR на колонне → поиск магазина → маршрут по 1 этажу; «к машине» на паркинг | [route/](https://daulet-rama.github.io/dostyk-plaza-3d-demo/route/) · [автозапуск](https://daulet-rama.github.io/dostyk-plaza-3d-demo/route/?demo=route) | [embed.html](https://daulet-rama.github.io/dostyk-plaza-3d-demo/route/embed.html) |
 | v3 — 1 этаж | помещения, арендаторы, поиск по номеру — по плану управляющей компании; паркинг | [l1/](https://daulet-rama.github.io/dostyk-plaza-3d-demo/l1/) | [embed.html](https://daulet-rama.github.io/dostyk-plaza-3d-demo/l1/embed.html) |
@@ -16,6 +17,15 @@
 | v1 — экстерьер | здание, площадь и город вокруг | [открыть](https://daulet-rama.github.io/dostyk-plaza-3d-demo/) | [embed.html](https://daulet-rama.github.io/dostyk-plaza-3d-demo/embed.html) |
 
 «Один файл» — тот же вьюер одной страницей с моделью внутри: так его встраивают в приложение (WebView), работает и без сети.
+
+## Что нового в v7: «ТРЦ · 3 этажа» и QR
+
+- **Три этажа по планам управляющей компании:** помещения, арендаторы, поиск и карточки на 1, 2 и 3 этаже; эскалаторы, витрины и люди. Режимы «ТРЦ», «Паркинг» и «Снаружи».
+- **QR на колонне.** Гость сканирует код телефоном и сразу видит «Вы здесь» и плитки «Куда идём?»: ZARA, Кино, Фудкорт, Galmart, Детям, Моя машина. Устанавливать ничего не нужно. Коды стоек — на странице [qr.html](https://daulet-rama.github.io/dostyk-plaza-3d-demo/mall/qr.html).
+- **Маршрут между этажами.** Фигурка идёт по маршруту и поднимается на эскалаторе или лифте, камера следует за ней, шаги — в списке и сверху экрана.
+- **Для показа.** [`?demo=route`](https://daulet-rama.github.io/dostyk-plaza-3d-demo/mall/?demo=route) — сценарий QR-03 → ZARA (2 этаж); [`?present=1`](https://daulet-rama.github.io/dostyk-plaza-3d-demo/mall/mall.html?present=1) — панель с QR для зала и кнопки демо.
+- Всё из v4–v6 работает и здесь: экстерьер с тенями, паркинг, «Где моя машина» ([car-demo.html](https://daulet-rama.github.io/dostyk-plaza-3d-demo/mall/car-demo.html)).
+- Языки: русский, казахский, английский (казахский и английский — черновик).
 
 ## Что нового в v6: «Где моя машина»
 
@@ -44,4 +54,4 @@
 
 ---
 
-Данные карты © участники OpenStreetMap (ODbL); источники и лицензии — [ATTRIBUTION.md](ATTRIBUTION.md). Планы этажа и паркинга — по материалам управляющей компании; исходные чертежи не публикуются. Номера машин в демо вымышленные.
+Данные карты © участники OpenStreetMap (ODbL); источники и лицензии — [ATTRIBUTION.md](ATTRIBUTION.md). Планы этажей и паркинга — по материалам управляющей компании; исходные чертежи не публикуются. Номера машин в демо вымышленные.
