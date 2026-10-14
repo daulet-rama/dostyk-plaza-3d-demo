@@ -1,0 +1,1 @@
+var e=[`P3`,`P2`,`P1`,`L1`,`L2`,`L3`],t=[`L1`,`L2`,`L3`],n=e=>/^(?:P\d|L\d)-/.test(String(e))?String(e):`L1-${e}`,r=e=>{let t=/^(P\d|L\d)-/.exec(String(e||``));return t?t[1]:null},i=(e,t)=>`${e}-${t}`,a=e=>e&&Array.isArray(e.unitIds)?e.unitIds.map(n):[],o=e=>e===`P1`?`P`:String(e||``).replace(/^L/,``);export{i as a,r as i,t as n,a as o,o as r,n as s,e as t};

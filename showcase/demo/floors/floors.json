@@ -1,0 +1,208 @@
+{
+ "version": 1,
+ "built": "2026-10-14",
+ "profile": "demo",
+ "grid": 13.57,
+ "levels": {
+  "L1": {
+   "file": "floors/L1.glb",
+   "bytes": 536364,
+   "rect": [
+    -149,
+    -104,
+    273,
+    176
+   ],
+   "marches": [
+    {
+     "id": "ESC-07-08",
+     "lower": "L1",
+     "upper": "L2",
+     "a": [
+      11.9,
+      39.15
+     ],
+     "b": [
+      -3.58,
+      40.21
+     ],
+     "width": 3.28,
+     "rise": 6.3
+    },
+    {
+     "id": "ESC-05-06",
+     "lower": "L1",
+     "upper": "L2",
+     "a": [
+      -72,
+      -22.01
+     ],
+     "b": [
+      -56.5,
+      -21.85
+     ],
+     "width": 3.28,
+     "rise": 6.3
+    }
+   ],
+   "fronts": 167,
+   "signs": 77,
+   "walls": 2052,
+   "rails": 0,
+   "lifts": 4,
+   "wells": 2,
+   "voidWells": 0,
+   "columns": 282,
+   "tris": {
+    "floor": 617,
+    "shop": 957,
+    "walls": 20520,
+    "fronts": 11760,
+    "glass": 508,
+    "cushion": 0,
+    "march": 1848,
+    "lit": 520,
+    "signs": 154,
+    "props": 332486
+   },
+   "props": 2860,
+   "furnishedUnits": 61,
+   "light": {
+    "file": "floors/L1-light.jpg",
+    "w": 4096,
+    "h": 2048,
+    "downlights": 350,
+    "bytes": 712979
+   },
+   "refl": {
+    "file": "floors/L1-refl.webp",
+    "w": 1024,
+    "h": 512,
+    "bytes": 33084
+   }
+  },
+  "L2": {
+   "file": "floors/L2.glb",
+   "bytes": 616388,
+   "rect": [
+    -150,
+    -105,
+    293,
+    177
+   ],
+   "marches": [
+    {
+     "id": "ESC-09-11",
+     "lower": "L2",
+     "upper": "L3",
+     "a": [
+      -72.11,
+      34.63
+     ],
+     "b": [
+      -83.7,
+      32.04
+     ],
+     "width": 3.37,
+     "rise": 4.95
+    },
+    {
+     "id": "ESC-10-12",
+     "lower": "L2",
+     "upper": "L3",
+     "a": [
+      -3.89,
+      -10.05
+     ],
+     "b": [
+      7.7,
+      -7.46
+     ],
+     "width": 3.37,
+     "rise": 4.95
+    }
+   ],
+   "fronts": 156,
+   "signs": 65,
+   "walls": 2560,
+   "rails": 136,
+   "lifts": 4,
+   "wells": 0,
+   "voidWells": 10,
+   "columns": 312,
+   "tris": {
+    "floor": 881,
+    "shop": 915,
+    "walls": 25600,
+    "fronts": 10820,
+    "glass": 1382,
+    "cushion": 4700,
+    "march": 1560,
+    "lit": 520,
+    "signs": 130,
+    "props": 309514
+   },
+   "props": 2963,
+   "furnishedUnits": 56,
+   "light": {
+    "file": "floors/L2-light.jpg",
+    "w": 4096,
+    "h": 2048,
+    "downlights": 348,
+    "bytes": 778147
+   },
+   "refl": {
+    "file": "floors/L2-refl.webp",
+    "w": 1024,
+    "h": 512,
+    "bytes": 36310
+   }
+  },
+  "L3": {
+   "file": "floors/L3.glb",
+   "bytes": 578624,
+   "rect": [
+    -150,
+    -72,
+    293,
+    143
+   ],
+   "marches": [],
+   "fronts": 203,
+   "signs": 57,
+   "walls": 2542,
+   "rails": 129,
+   "lifts": 3,
+   "wells": 0,
+   "voidWells": 10,
+   "columns": 296,
+   "tris": {
+    "floor": 593,
+    "shop": 1811,
+    "walls": 25420,
+    "fronts": 11330,
+    "glass": 1022,
+    "cushion": 4400,
+    "march": 0,
+    "lit": 390,
+    "signs": 114,
+    "props": 195616
+   },
+   "props": 2349,
+   "furnishedUnits": 54,
+   "light": {
+    "file": "floors/L3-light.jpg",
+    "w": 4096,
+    "h": 2048,
+    "downlights": 336,
+    "bytes": 866380
+   },
+   "refl": {
+    "file": "floors/L3-refl.webp",
+    "w": 1024,
+    "h": 512,
+    "bytes": 32966
+   }
+  }
+ }
+}

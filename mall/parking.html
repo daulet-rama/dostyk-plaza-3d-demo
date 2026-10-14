@@ -64,9 +64,20 @@
     /** Команда от хоста (JSON-строка или объект). До загрузки модуля — в очередь (не больше 50). */
     receive: function (m) {
       var cmd = parse(m);
-      if (!cmd || cmd.dp !== PROTOCOL || cmd.kind !== 'cmd') return false;
+      if (!cmd || cmd.kind !== 'cmd') return false;
+      // [w4-A] другая версия dp — ответ E_UNKNOWN_COMMAND (как у модуля, docs/BRIDGE.md §1), а не молчание
+      if (cmd.dp !== PROTOCOL) {
+        if (cmd.id !== undefined && cmd.id !== null) post({ dp: PROTOCOL, kind: 'res', id: cmd.id, ok: false, error: { code: 'E_UNKNOWN_COMMAND', message: 'unsupported protocol dp:' + cmd.dp + ', expected ' + PROTOCOL } });
+        return false;
+      }
+      // [w4-A] «Назад» на заставке — сразу handled:false: закрывать во вьюере нечего, хост уходит со страницы (как protocol.js до ready)
+      if (cmd.name === 'back') {
+        if (cmd.id !== undefined && cmd.id !== null) post({ dp: PROTOCOL, kind: 'res', id: cmd.id, ok: true, result: { handled: false } });
+        return true;
+      }
       if (V._q.length >= QUEUE_MAX) {
-        post({ dp: PROTOCOL, kind: 'res', id: cmd.id, ok: false, error: { code: 'E_QUEUE_FULL', message: 'queue limit ' + QUEUE_MAX + ' before ready' } });
+        // [w4-C] без id ответа нет (BRIDGE §1, как respond() в protocol.js)
+        if (cmd.id !== undefined && cmd.id !== null) post({ dp: PROTOCOL, kind: 'res', id: cmd.id, ok: false, error: { code: 'E_QUEUE_FULL', message: 'queue limit ' + QUEUE_MAX + ' before ready' } });
         return false;
       }
       V._q.push(cmd);
@@ -108,6 +119,10 @@
     navL = /^kk\b/i.test(n0) ? 'kk' : /^en\b(?!-(kz|ru)\b)/i.test(n0) && !/(^|,)(ru|kk)\b/i.test(nl.join(',')) ? 'en' : 'ru';
   } catch (e) { /* без navigator */ }
   var lang = params.get('lang') || hash.get('lang') || cfg.lang || navL;
+  /** Параметр: ?query → #hash → DostykConfig (как param в main.js). */
+  var pick = function (k) { var v = params.get(k); if (v == null) v = hash.get(k); if (v == null && cfg[k] != null) v = String(cfg[k]); return v; };
+  /** [w4-C] Метка стадии загрузки (панель ?perf=1): performance.mark('dp:…'); старый WebView — молча. */
+  var mark = function (name) { try { performance.mark('dp:' + name); } catch (e) { /* нет User Timing */ } };
   // ночной пресет: тёмный постер сразу (без белой вспышки перед тёмной сценой в тёмной теме хоста)
   var night = (params.get('preset') || hash.get('preset') || cfg.preset) === 'night';
   if (night) {
@@ -115,18 +130,51 @@
     var csm = document.querySelector('meta[name="color-scheme"]');
     if (csm) csm.setAttribute('content', 'dark');
   }
-  // qr, qrOpen — заставка по ссылке стойки; mall, parking — подзаголовок страниц mall.html / parking.html (kk и en — черновик)
+  // qr, qrOpen — заставка по ссылке стойки; mall, parking — подзаголовок страниц mall.html / parking.html.
+  // [w5-T] тексты — ключи boot.* словарей src/i18n/{ru,kk,en}.json: блок ниже пишет npm run i18n:sync (проверка — npm run i18n:check)
+  // <i18n:boot> создано npm run i18n:sync из src/i18n/{ru,kk,en}.json (ключи boot.); не править руками — править словари
   var T = {
-    ru: { loading: 'Загрузка 3D-модели…', setup: 'Подготовка сцены…', compile: 'Подготовка графики…', failed: '3D-модель не загрузилась', nogl: 'Схема без 3D',
-      qr: 'Вы у стойки {id}', qrOpen: 'открываем план…', mall: 'ТРЦ · 3 этажа', parking: 'Паркинг',
-      net: 'Нет связи — часть карты не загрузилась. Обновите страницу', refresh: 'Обновить' },
-    kk: { loading: '3D-модель жүктелуде…', setup: 'Сахна дайындалуда…', compile: 'Графика дайындалуда…', failed: '3D-модель жүктелмеді', nogl: '3D-сіз сызба',
-      qr: 'Сіз {id} тақтайшасының жанындасыз', qrOpen: 'жоспар ашылуда…', mall: 'СОО · 3 қабат', parking: 'Тұрақ',
-      net: 'Байланыс жоқ — картаның бір бөлігі жүктелмеді. Бетті жаңартыңыз', refresh: 'Жаңарту' },
-    en: { loading: 'Loading 3D model…', setup: 'Preparing scene…', compile: 'Preparing graphics…', failed: '3D model failed to load', nogl: 'Plan view (no 3D)',
-      qr: 'You are at stand {id}', qrOpen: 'opening the map…', mall: 'Mall · 3 floors', parking: 'Parking',
-      net: 'No connection — part of the map did not load. Refresh the page', refresh: 'Refresh' },
+    "ru": {
+      "loading": "Загрузка 3D-модели…",
+      "setup": "Подготовка сцены…",
+      "compile": "Подготовка графики…",
+      "failed": "3D-модель не загрузилась",
+      "nogl": "Схема без 3D",
+      "qr": "Вы у стойки {id}",
+      "qrOpen": "открываем план…",
+      "mall": "ТРЦ · 3 этажа",
+      "parking": "Паркинг",
+      "net": "Нет связи — часть карты не загрузилась. Обновите страницу",
+      "refresh": "Обновить"
+    },
+    "kk": {
+      "loading": "3D-модель жүктелуде…",
+      "setup": "Сахна дайындалуда…",
+      "compile": "Графика дайындалуда…",
+      "failed": "3D-модель жүктелмеді",
+      "nogl": "3D-сіз сұлба",
+      "qr": "Сіз {id} тірегінің жанындасыз",
+      "qrOpen": "жоспар ашылуда…",
+      "mall": "СОО · 3 қабат",
+      "parking": "Тұрақ",
+      "net": "Байланыс жоқ — картаның бір бөлігі жүктелмеді. Бетті жаңартыңыз",
+      "refresh": "Жаңарту"
+    },
+    "en": {
+      "loading": "Loading 3D model…",
+      "setup": "Preparing scene…",
+      "compile": "Preparing graphics…",
+      "failed": "3D model failed to load",
+      "nogl": "Plan view (no 3D)",
+      "qr": "You are at stand {id}",
+      "qrOpen": "opening the map…",
+      "mall": "Mall · 3 levels",
+      "parking": "Parking",
+      "net": "No connection — part of the map did not load. Refresh the page",
+      "refresh": "Refresh"
+    }
   };
+  // </i18n:boot>
   var t = T[lang] || T.ru;
 
   // --- ссылка стойки QR (#qr=QR-03 | #qr=03 | прежнее #route=from:QR-03): номер — прямо из адреса, без данных и модуля
@@ -135,23 +183,30 @@
     return /^\d{1,3}$/.test(s) ? 'QR-' + (s.length < 2 ? '0' + s : s) : null;
   }
   var rtFrom = /(?:^|,)\s*from:\s*(QR-?\d+)/i.exec(hash.get('route') || '');
-  var qrId = normQr(hash.get('qr')) || (rtFrom ? normQr(rtFrom[1]) : null);
+  // [w5-K] и ?qr=QR-03 (постоянная ссылка домена ТРЦ переадресует на …/mall/?qr=QR-03; hash главнее) — как src/viewer/qr-link.js linkArgs
+  var qrId = normQr(hash.get('qr')) || (rtFrom ? normQr(rtFrom[1]) : null) || (!hash.get('route') ? normQr(params.get('qr')) : null);
+  // [w5-K] «моя машина» по ссылке (#car=C-145, ?car=, наклейка #spot=C-145&save=1) — сразу «Паркинг»: подзаголовок и поздняя модель
+  var saveOn = function (p) { var v = p.get('save'); return v === '' || v === '1' || v === 'true' || v === 'yes'; };
+  var carLink = !qrId && !!(hash.get('car') || params.get('car') || (hash.get('spot') && saveOn(hash)) || (!hash.get('spot') && params.get('spot') && saveOn(params)));
   // область (app=mall|parking, синоним scope; DostykConfig.app у mall.html / parking.html) — подзаголовок
-  var app = params.get('app') || hash.get('app') || params.get('scope') || hash.get('scope') || cfg.app || '';
+  var app = params.get('app') || hash.get('app') || params.get('scope') || hash.get('scope') || cfg.app || (carLink ? 'parking' : '');
   var appText = (params.get('demo') || hash.get('demo') || cfg.demo) ? '' : app === 'mall' ? t.mall : app === 'parking' ? t.parking : '';
   var escHtml = function (x) { return String(x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
 
   // --- проверка WebGL2 (контекст сразу освобождаем)
   var gl2 = false, reason = '';
+  // [w5-X] телефон с памятью ≤ 2 ГБ: строка видеокарты — для решения о режиме «2D» (main.js want2d), без второго контекста
+  var mem2 = +navigator.deviceMemory > 0 && +navigator.deviceMemory <= 2, gpu = '';
   try {
     var c = document.createElement('canvas');
     var gl = c.getContext('webgl2', { failIfMajorPerformanceCaveat: false });
     gl2 = !!gl;
     if (!gl2) reason = 'webgl2 context unavailable';
+    if (gl && mem2) { var dbg = gl.getExtension('WEBGL_debug_renderer_info'); gpu = String(gl.getParameter(dbg ? dbg.UNMASKED_RENDERER_WEBGL : gl.RENDERER) || ''); }
     var lose = gl && gl.getExtension('WEBGL_lose_context');
     if (lose) lose.loseContext();
   } catch (e) { reason = String(e && e.message || e); }
-  window.__dpBoot = { webgl2: gl2, reason: reason, t0: Date.now() };
+  window.__dpBoot = { webgl2: gl2, reason: reason, t0: Date.now(), gpu: gpu || '' };
 
   // --- постер. План: контур ТРЦ из data/building.json (упрощён до 0,5 м, x = восток, y = −север).
   var OUTLINE = 'M-75.5 70L22 44.5L33 41.5L65.5 33L73 60L147 40L139 12L131.5 -15.5L117.5 -65L107 -58.5L105 -56.5L103.5 -54.5L92 -54.5L92 -52L91 -56.5L90 -59.5L88.5 -62L86 -64L82.5 -65.5L79 -66.5L75.5 -65L73 -63L70.5 -60L69.5 -54.5L70 -49.5L68.5 -47L65.5 -44L62.5 -48.5L56 -53L47.5 -58.5L49.5 -61.5L42 -66.5L35 -71.5L32 -67L28.5 -68.5L21.5 -70L-91 -61.5L-101.5 -61L-107 -62L-111.5 -62L-118 -61L-123 -59.5L-128 -56.5L-132.5 -52L-136.5 -47.5L-141 -39.5L-143 -34.5L-144 -29L-144 -23.5L-143.5 -19L-142 -13.5L-128.5 34L-127 39.5L-119.5 38.5L-112 61L-97 56.5L-91.5 74L-81.5 71.5Z';
@@ -213,7 +268,7 @@
     (appText && !qrId ? '<div class="dp-app">' + escHtml(appText) + '</div>' : '') +
     (qrId ? '<div class="dp-qr"><i></i><b>' + escHtml(t.qr.replace('{id}', qrId)) + '</b> <span>· ' + escHtml(t.qrOpen) + '</span></div>' : '') +
     '<div class="dp-bar"><i></i></div>' +
-    '<div class="dp-t">' + t.loading + '</div>';
+    '<div class="dp-t">' + (String(pick('quality') || '') === '2d' ? t.nogl : t.loading) + '</div>'; // [w5-X] режим «2D» — без «3D-модели»
   // <body> ещё нет: вешаем на <html>, позже переносим в body
   document.documentElement.appendChild(el);
   document.addEventListener('DOMContentLoaded', function () {
@@ -223,6 +278,7 @@
   var bar = el.querySelector('.dp-bar i');
   var txt = el.querySelector('.dp-t');
   var failed = false;
+  var hidden = false;
 
   var P = {
     el: el,
@@ -235,6 +291,7 @@
     /** fast — посадка по QR: под заставкой уже кадр стойки, гасим быстрее (0,25 с вместо 0,45 с). */
     hide: function (fast) {
       if (failed) return;
+      if (!hidden) { hidden = true; mark('poster-hide'); } // [w4-C] посетитель увидел карту (по QR — уже «Вы здесь»)
       if (fast) el.style.transitionDuration = '.25s';
       el.classList.add('dp-hide');
       setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 600);
@@ -309,6 +366,152 @@
     },
   };
   window.DostykPoster = P;
+  mark('poster');
+
+  // --- [w4-C] «Здание»: GLB экстерьера качается сразу, параллельно с модулем вьюера (а не после его разбора и createStage).
+  // Не качаем: встроенная модель (viewer.html: #dp-model), file://, нет WebGL2 (будет SVG-план) и поздняя модель (main-late.js:
+  // посадка по QR или сразу «ТРЦ» / «Паркинг» — app=mall|parking без intro; модель после этажей, не отнимает у них канал;
+  // условие — как lateMod / directApp в main.js). loader.js берёт эту загрузку (DostykPoster.model), если адрес тот же;
+  // тело читаем сами — иначе по HTTP/1.1 загрузка встала бы на паузу, пока модуль вьюера не начнёт читать.
+  var yes = function (v) { return v === '1' || v === 'true'; };
+  var ui = String(pick('ui') || '');
+  var demo = pick('demo');
+  var landing = !!qrId && ui !== '0' && ui !== 'false' && !demo;
+  var intro = yes(String(pick('intro') || ''));
+  var noLate = String(pick('late') || '') === '0';
+  // [w5-X] режим «2D» (?quality=2d) и телефон с памятью ≤ 2 ГБ (возможен автопереход в 2D) — модель заранее не качаем
+  var prefetchBase = gl2 && /^https?:$/.test(location.protocol) && !mem2;
+  // [w5-L круг 1] c — configure из очереди заглушки (главнее адреса, как config.js); wantCore — не 2D, wantModel — ещё и не поздняя
+  function wantCore(c) { return prefetchBase && (c && c.quality != null ? c.quality : String(pick('quality') || '')) !== '2d'; }
+  function wantModel(c) {
+    var a = c && c.app != null ? c.app : app;
+    var late = (landing || (!demo && !intro && (a === 'mall' || a === 'parking'))) && !noLate;
+    return wantCore(c) && !late;
+  }
+  /** [w5-L круг 1] configure в очереди stub.js (до старта модуля): {app?, quality?} или null. */
+  function queuedCfg() {
+    var V = window.DostykViewer, q = V && V._stub && V._q, out = null;
+    if (!q || !q.length) return null;
+    for (var i = 0; i < q.length; i++) {
+      var p = q[i] && q[i].name === 'configure' && q[i].payload;
+      if (!p || typeof p !== 'object') continue;
+      out = out || {};
+      if (p.app != null) out.app = String(p.app);
+      if (p.quality != null) out.quality = String(p.quality);
+    }
+    return out;
+  }
+  // [w5-L круг 1] канал хоста без app в адресе и DostykConfig: режим придёт configure на booting (APP-INTEGRATION §3, шаг 6).
+  // Ядро нужно любому 3D-режиму — качаем сразу; окружение ждёт configure («ТРЦ» / «Паркинг» его не берут — 0,83 МБ без дела)
+  var hostCh = false;
+  try {
+    var w0 = window;
+    hostCh = !!((w0.DostykHost && typeof w0.DostykHost.postMessage === 'function') ||
+      (w0.webkit && w0.webkit.messageHandlers && w0.webkit.messageHandlers.DostykHost) ||
+      (w0.ReactNativeWebView && typeof w0.ReactNativeWebView.postMessage === 'function') || (w0.parent && w0.parent !== w0));
+  } catch (e) { hostCh = false; }
+  var waitCfg = hostCh && !app && !landing && !demo && !intro && !noLate && String(pick('quality') || '') !== '2d';
+  var CFG_WAIT = 300; // мс после разбора документа
+  // dev-сервер: poster.js подключён по src (/src/boot/poster.js), модель — /dist/model/; в сборке скрипт встроен — model/ рядом
+  var devScript = !!(document.currentScript && /\/src\/boot\/poster\.js/.test(document.currentScript.src || ''));
+  // [w5-L] без ?model= — «ядро» (dostyk-plaza.core.glb) и «окружение» (dostyk-plaza.env.glb) параллельно (loader.js CORE_FILE,
+  // ENV_FILE: DostykPoster.model и DostykPoster.modelEnv); ядра на сервере нет — loader.js скачает полный dostyk-plaza.glb сам
+  // [w5-L круг 1] part: 'core' | 'env' | без него — оба
+  function prefetchModel(part) {
+    if (document.getElementById('dp-model') || typeof fetch !== 'function') return;
+    var dir = devScript ? '/dist/model/' : 'model/';
+    if (part !== 'env' && !P.model) {
+      mark('model-prefetch');
+      P.model = prefetchGlb(pick('model') || dir + 'dostyk-plaza.core.glb');
+    }
+    if (part !== 'core' && P.model && !P.modelEnv && !pick('model')) P.modelEnv = prefetchGlb(dir + 'dostyk-plaza.env.glb');
+  }
+  function prefetchGlb(rel) {
+    var url;
+    try { url = new URL(rel, document.baseURI).href; } catch (e) { return null; }
+    var pre = { url: url, loaded: 0, total: 0, status: 0, ok: false, used: false, onProgress: null, promise: null };
+    var tick = function () { if (pre.onProgress) { try { pre.onProgress(pre.loaded, pre.total); } catch (e) { /* слушатель не важен */ } } };
+    // [w5-L круг 1] для cancelPre
+    try { pre.ctl = typeof AbortController === 'function' ? new AbortController() : null; } catch (e) { pre.ctl = null; }
+    pre.promise = fetch(url, pre.ctl ? { signal: pre.ctl.signal } : {}).then(function (res) {
+      pre.status = res.status;
+      pre.ok = res.ok;
+      pre.total = +res.headers.get('content-length') || 0;
+      if (!res.ok) return null;
+      if (!res.body || !res.body.getReader) return res.arrayBuffer().then(function (b) { pre.loaded = b.byteLength; tick(); return b; });
+      var reader = res.body.getReader(), chunks = [];
+      var pump = function () {
+        return reader.read().then(function (r) {
+          if (r.done) {
+            var out = new Uint8Array(pre.loaded), o = 0;
+            for (var i = 0; i < chunks.length; i++) { out.set(chunks[i], o); o += chunks[i].byteLength; }
+            chunks = null;
+            return out.buffer;
+          }
+          chunks.push(r.value);
+          pre.loaded += r.value.byteLength;
+          tick();
+          return pump();
+        });
+      };
+      return pump();
+    });
+    pre.promise.catch(function (e) { /* сеть оборвалась — loader.js скачает сам */ });
+    return pre;
+  }
+  /** [w5-L круг 1] Снять предзагрузку P[k] ('model' | 'modelEnv'), пока loader.js её не взял. */
+  function cancelPre(k) {
+    var pre = P[k];
+    if (!pre || pre.used) return;
+    pre.aborted = true;
+    try { if (pre.ctl) pre.ctl.abort(); } catch (e) { /* старый WebView — просто забудем */ }
+    P[k] = null;
+  }
+  /**
+   * [w5-L круг 1] Окружение ждёт configure (обёртка receive заглушки): «Здание» — качать, «ТРЦ» / «Паркинг» — нет, 2D — снять и ядро.
+   * Модуль стартовал раньше (__dpModuleStarted) — решает loader.js. Ничего за CFG_WAIT — качаем; поздний configure до старта снимет.
+   * P.prefetchBy: address | configure | module | timeout | timeout+configure.
+   */
+  function awaitCfg() {
+    var V = window.DostykViewer, orig = V && V._stub && typeof V.receive === 'function' ? V.receive : null, done = false;
+    P.prefetchBy = 'wait';
+    var stop = function () { done = true; if (orig && V.receive === wrap) V.receive = orig; };
+    var check = function () {
+      if (done) return;
+      if (window.__dpModuleStarted) { if (!P.modelEnv) P.prefetchBy = 'module'; stop(); return; }
+      var c = queuedCfg();
+      if (!c) return;
+      stop();
+      P.prefetchBy = P.modelEnv ? 'timeout+configure' : 'configure';
+      if (wantModel(c)) { prefetchModel('env'); return; }
+      cancelPre('modelEnv');
+      if (!wantCore(c)) cancelPre('model');
+    };
+    var wrap = function () { var r = orig.apply(this, arguments); check(); return r; };
+    if (orig) V.receive = wrap;
+    setTimeout(function () {
+      check();
+      if (done) return;
+      P.prefetchBy = 'timeout';
+      prefetchModel('env');
+      if (!orig) stop();
+    }, CFG_WAIT);
+  }
+  var modelStarted = false;
+  function startModel() {
+    if (modelStarted || document.readyState === 'loading') return;
+    modelStarted = true;
+    if (P.model || document.getElementById('dp-model') || typeof fetch !== 'function') return;
+    var c = queuedCfg();
+    if (c || !waitCfg) { P.prefetchBy = c ? 'configure' : 'address'; if (wantModel(c)) prefetchModel(); return; }
+    prefetchModel('core');
+    awaitCfg();
+  }
+  if (prefetchBase) {
+    // встроенная модель (#dp-model) стоит в <body> — смотрим, когда документ разобран (до запуска модуля вьюера)
+    if (document.readyState !== 'loading') startModel();
+    else document.addEventListener('readystatechange', startModel);
+  }
 
   // --- сторож модуля: сетевой сбой <script type=module> или модуль не стартовал к событию load
   window.addEventListener('error', function (e) {
@@ -322,8 +525,8 @@
   });
 })();
 </script>
-  <script>(function(h){if(!/(?:^|[#&])qr=|route=from(?::|%3A)\s*QR/i.test(h))return;var a=["./assets/labels-B1hHNUTL.css","./assets/route-ui-DW-MgcP_.css","./assets/floors-ui-Db25KZqJ.css","./assets/floors-D1BXIZmK.js","./assets/poly-ty6ODsPX.js","./assets/parking-09GPRS70.js","./assets/geometry-DRNxi0sX.js","./assets/level-ids-Cbzkv6MA.js","./assets/l1-BuWAg341.js","./assets/links-BweXbzLD.js","./assets/labels-CPH3KI4Z.js","./assets/floors-build-Ef5mDOgY.js","./assets/floors-fx-ClBhRK3s.js","./assets/main-late-CPjmfHH_.js","./assets/main-data-floors-Ebltnr-L.js","./assets/l1-runtime-CMlW37Hn.js","./assets/l2-runtime-Bjycyw6C.js","./assets/l3-runtime-B-f2f6vp.js","./assets/route-runtime-ClAOufna.js","./assets/route-api-Bb-oPFPm.js","./assets/route-ui-BOzG6WXb.js","./assets/en-B4_OjFLY.js","./assets/floors-ui-DL6IYddR.js","./assets/popular-BWlhKhyV.js","./assets/dist-B1uTZsTQ.js"];for(var i=0;i<a.length;i++){var l=document.createElement("link"),c=/\.css$/.test(a[i]);l.rel=c?"preload":"modulepreload";if(c)l.as="style";l.crossOrigin="";l.href=a[i];document.head.appendChild(l);}})(location.hash);</script>
-  <script type="module" crossorigin src="./assets/index-qxK-aya6.js"></script>
+  <script>(function(h,s){if(!/(?:^|[#&])qr=|route=from(?::|%3A)\s*QR/i.test(h))return;var a=["./assets/labels-B1hHNUTL.css","./assets/route-ui-BzRQhgyi.css","./assets/floors-ui-CPlsiBle.css","./assets/floors-B85PDjC5.js","./assets/poly-ty6ODsPX.js","./assets/parking-TEJ8KogP.js","./assets/geometry-DRNxi0sX.js","./assets/level-ids-D727EiMK.js","./assets/l1-D7I6JpKi.js","./assets/links-BweXbzLD.js","./assets/labels-DStMCgz4.js","./assets/BufferGeometryUtils-D6nRnBC0.js","./assets/floors-build-DW1-ewja.js","./assets/floors-fx-yHAlvnWL.js","./assets/main-late-6rv-crwi.js","./assets/main-data-floors-Ebltnr-L.js","./assets/l1-runtime-CMlW37Hn.js","./assets/route-runtime-R9KmG9DS.js","./assets/route-api-BYXOicsq.js","./assets/route-ui-podBI6fV.js","./assets/i18n-BJqvCAgI.js","./assets/floors-ui-DcRofgSj.js","./assets/popular-BWlhKhyV.js","./assets/dist-Cpr3OaU0.js"],L={"L2":["./assets/l2-runtime-CCYFUggt.js"],"L3":["./assets/l3-runtime-B-f2f6vp.js"]};var m=/(?:^|[#&])qr=(?:QR)?[-_ ]?(\d{1,3})/i.exec(h)||/from(?::|%3A)\s*QR-?(\d{1,3})/i.exec(h),n=m?+m[1]:0,v=n>=30&&n<40?3:n>=20&&n<30?2:1;var w=/(?:^|[#&])to=|(?:^|[#&])route=[^&]*to(?::|%3A)/i.test(h)||/[?&]qrfirst=0/.test(s)?[2,3]:v>1?[v,v-1]:[];for(var j=0;j<w.length;j++)if(L["L"+w[j]])a=a.concat(L["L"+w[j]]);for(var i=0;i<a.length;i++){var l=document.createElement("link"),c=/\.css$/.test(a[i]);l.rel=c?"preload":"modulepreload";if(c)l.as="style";l.crossOrigin="";l.href=a[i];document.head.appendChild(l);}})(location.hash,location.search);</script>
+  <script type="module" crossorigin src="./assets/index-4nt_5mns.js"></script>
 </head>
 <body>
   <div id="app"></div>
