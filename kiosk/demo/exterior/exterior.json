@@ -1,0 +1,30 @@
+{
+ "version": 1,
+ "built": "2026-10-14T12:25:18.849Z",
+ "profile": "demo",
+ "atlases": [
+  "W1",
+  "W2",
+  "W3",
+  "R",
+  "G"
+ ],
+ "sizes": {
+  "albedo": 2048,
+  "light": 1024
+ },
+ "scales": {
+  "duskMax": 1.3275843858718872,
+  "emitMax": 9
+ },
+ "aoDist": 4,
+ "texelCm": {
+  "W1": 8.2,
+  "W2": 7.3,
+  "W3": 8.9,
+  "R": 14.8,
+  "G": 10.7
+ },
+ "tris": 76666,
+ "trees": 329
+}

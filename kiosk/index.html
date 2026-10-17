@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <script>(function(){try{var S=["QR-01","QR-02","QR-03","QR-04","QR-05","QR-06","QR-07","QR-08","QR-21","QR-22","QR-23","QR-24","QR-25","QR-26","QR-31","QR-32","QR-33","QR-34","QR-35"],q=new URLSearchParams(location.search),k=(q.get("kiosk")||"").trim(),h=location.hash||"";var n=(/^(?:qr)?[-_ ]?(\d{1,3})$/i.exec(k)||[])[1];if(!n)return;n=("0"+(+n)).slice(-2);var id="QR-"+n;if(S.indexOf(id)>=0&&!/(^|[#&])(qr|route)=/i.test(h))history.replaceState(null,"",location.pathname+location.search+"#qr="+id)}catch(e){}})();</script>
+  <style>html,body{touch-action:none;overscroll-behavior:none}html{-webkit-user-select:none;user-select:none}</style>
+  <script>window.DostykConfig=Object.assign({kiosk:'',people:0,lang:'ru',accessible:0,qrBase:"https://daulet-rama.github.io/dostyk-plaza-3d-demo/mall/"},window.DostykConfig||{});</script>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#DFE6EC">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  <title>Dostyk Plaza — информационная панель</title>
+  <link rel="icon" href="data:,">
+  <!-- Ступень 1: заглушка моста (window.DostykViewer + событие booting). В сборке инлайнится (scripts/build-embed.mjs). -->
+  <script>(function () {
+  'use strict';
+  if (window.DostykViewer && window.DostykViewer._stub) return;
+
+  var PROTOCOL = 1;
+  var QUEUE_MAX = 50;
+  var params = new URLSearchParams(location.search);
+
+  // Список разрешённых origin хоста (?hostOrigin=a,b). Пусто → тот же origin; для file:// (origin "null") → '*'.
+  var cfg = window.DostykConfig || {};
+  var hostOrigins = (params.get('hostOrigin') || cfg.hostOrigin || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+  var selfOrigin = location.origin;
+  var parentTarget = hostOrigins.length ? hostOrigins[0] : (selfOrigin && selfOrigin !== 'null' ? selfOrigin : '*');
+
+  function originAllowed(origin) {
+    if (hostOrigins.indexOf('*') >= 0) return true;
+    if (origin === '' ) return true;                       // сообщение от нативного хоста (RN/Android)
+    if (origin === selfOrigin) return true;                // тот же origin (в т.ч. "null" для file:// ↔ file://)
+    return hostOrigins.indexOf(origin) >= 0;
+  }
+
+  /** Исходящий канал: первый доступный хост; CustomEvent — всегда (для слушателей внутри страницы). */
+  function post(msg) {
+    var json = typeof msg === 'string' ? msg : JSON.stringify(msg);
+    var via = 'event';
+    try {
+      var w = window;
+      if (w.DostykHost && typeof w.DostykHost.postMessage === 'function') {
+        w.DostykHost.postMessage(json); via = 'DostykHost';                         // Flutter / Android
+      } else if (w.webkit && w.webkit.messageHandlers && w.webkit.messageHandlers.DostykHost) {
+        w.webkit.messageHandlers.DostykHost.postMessage(json); via = 'webkit';     // iOS WKWebView
+      } else if (w.ReactNativeWebView && typeof w.ReactNativeWebView.postMessage === 'function') {
+        w.ReactNativeWebView.postMessage(json); via = 'rn';                       // React Native
+      } else if (w.parent && w.parent !== w) {
+        w.parent.postMessage(json, parentTarget); via = 'parent';                  // iframe
+      }
+    } catch (e) { via = 'error'; }
+    try { window.dispatchEvent(new CustomEvent('dostyk:message', { detail: json })); } catch (e2) { /* старый WebView */ }
+    return via;
+  }
+
+  function parse(m) {
+    if (m && typeof m === 'object') return m;
+    if (typeof m !== 'string' || m.charAt(0) !== '{') return null;
+    try { return JSON.parse(m); } catch (e) { return null; }
+  }
+
+  var V = {
+    _stub: true,
+    _q: [],
+    protocol: PROTOCOL,
+    /** Команда от хоста (JSON-строка или объект). До загрузки модуля — в очередь (не больше 50). */
+    receive: function (m) {
+      var cmd = parse(m);
+      if (!cmd || cmd.kind !== 'cmd') return false;
+      // [w4-A] другая версия dp — ответ E_UNKNOWN_COMMAND (как у модуля, docs/BRIDGE.md §1), а не молчание
+      if (cmd.dp !== PROTOCOL) {
+        if (cmd.id !== undefined && cmd.id !== null) post({ dp: PROTOCOL, kind: 'res', id: cmd.id, ok: false, error: { code: 'E_UNKNOWN_COMMAND', message: 'unsupported protocol dp:' + cmd.dp + ', expected ' + PROTOCOL } });
+        return false;
+      }
+      // [w4-A] «Назад» на заставке — сразу handled:false: закрывать во вьюере нечего, хост уходит со страницы (как protocol.js до ready)
+      if (cmd.name === 'back') {
+        if (cmd.id !== undefined && cmd.id !== null) post({ dp: PROTOCOL, kind: 'res', id: cmd.id, ok: true, result: { handled: false } });
+        return true;
+      }
+      if (V._q.length >= QUEUE_MAX) {
+        // [w4-C] без id ответа нет (BRIDGE §1, как respond() в protocol.js)
+        if (cmd.id !== undefined && cmd.id !== null) post({ dp: PROTOCOL, kind: 'res', id: cmd.id, ok: false, error: { code: 'E_QUEUE_FULL', message: 'queue limit ' + QUEUE_MAX + ' before ready' } });
+        return false;
+      }
+      V._q.push(cmd);
+      return true;
+    },
+    _post: post,
+    _cfg: { hostOrigins: hostOrigins, parentTarget: parentTarget, originAllowed: originAllowed },
+    _t0: Date.now(),
+  };
+  window.DostykViewer = V;
+
+  // Входящие postMessage (iframe; RN на Android шлёт в document). receive берём «вживую» — модуль его подменит.
+  function onMessage(e) {
+    if (!originAllowed(e.origin)) return;
+    var cmd = parse(e.data);
+    if (!cmd || cmd.kind !== 'cmd' || typeof cmd.dp !== 'number') return;
+    window.DostykViewer.receive(cmd);
+  }
+  window.addEventListener('message', onMessage);
+  document.addEventListener('message', onMessage);
+  V._listening = true;
+
+  post({ dp: PROTOCOL, kind: 'evt', name: 'booting', payload: { protocol: PROTOCOL } });
+})();
+</script>
+  <style>html,body{-webkit-tap-highlight-color:transparent;background:#dfe6ec;height:100%;margin:0;overflow:hidden}body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;font:13px/1.35 Onest,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Noto Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif}#app{position:fixed;top:0;bottom:0;left:0;right:0}html.dp-night,html.dp-night body{background:#0b1020}</style>
+  <!-- Ступень 2: проверка WebGL2 и постер (SVG-план + прогресс), сторож модуля. -->
+  <script>(function () {
+  'use strict';
+  if (window.DostykPoster) return;
+  var params = new URLSearchParams(location.search);
+  var hash = new URLSearchParams(location.hash.slice(1));
+  var cfg = window.DostykConfig || {};
+  // язык без lang (как navLang в main.js): kk — первый язык телефона казахский; en — английский без ru/kk в списке; иначе ru
+  var navL = 'ru';
+  try {
+    var nl = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ''];
+    var n0 = navigator.language || nl[0] || '';
+    navL = /^kk\b/i.test(n0) ? 'kk' : /^en\b(?!-(kz|ru)\b)/i.test(n0) && !/(^|,)(ru|kk)\b/i.test(nl.join(',')) ? 'en' : 'ru';
+  } catch (e) { /* без navigator */ }
+  var lang = params.get('lang') || hash.get('lang') || cfg.lang || navL;
+  /** Параметр: ?query → #hash → DostykConfig (как param в main.js). */
+  var pick = function (k) { var v = params.get(k); if (v == null) v = hash.get(k); if (v == null && cfg[k] != null) v = String(cfg[k]); return v; };
+  /** [w4-C] Метка стадии загрузки (панель ?perf=1): performance.mark('dp:…'); старый WebView — молча. */
+  var mark = function (name) { try { performance.mark('dp:' + name); } catch (e) { /* нет User Timing */ } };
+  // ночной пресет: тёмный постер сразу (без белой вспышки перед тёмной сценой в тёмной теме хоста)
+  var night = (params.get('preset') || hash.get('preset') || cfg.preset) === 'night';
+  if (night) {
+    document.documentElement.className += ' dp-night';
+    var csm = document.querySelector('meta[name="color-scheme"]');
+    if (csm) csm.setAttribute('content', 'dark');
+  }
+  // qr, qrOpen — заставка по ссылке стойки; mall, parking — подзаголовок страниц mall.html / parking.html.
+  // [w5-T] тексты — ключи boot.* словарей src/i18n/{ru,kk,en}.json: блок ниже пишет npm run i18n:sync (проверка — npm run i18n:check)
+  // <i18n:boot> создано npm run i18n:sync из src/i18n/{ru,kk,en}.json (ключи boot.); не править руками — править словари
+  var T = {
+    "ru": {
+      "loading": "Загрузка 3D-модели…",
+      "setup": "Подготовка сцены…",
+      "compile": "Подготовка графики…",
+      "failed": "3D-модель не загрузилась",
+      "nogl": "Схема без 3D",
+      "qr": "Вы у стойки {id}",
+      "qrOpen": "открываем план…",
+      "mall": "ТРЦ · 3 этажа",
+      "parking": "Паркинг",
+      "net": "Нет связи — часть карты не загрузилась. Обновите страницу",
+      "refresh": "Обновить"
+    },
+    "kk": {
+      "loading": "3D-модель жүктелуде…",
+      "setup": "Сахна дайындалуда…",
+      "compile": "Графика дайындалуда…",
+      "failed": "3D-модель жүктелмеді",
+      "nogl": "3D-сіз сұлба",
+      "qr": "Сіз {id} тірегінің жанындасыз",
+      "qrOpen": "жоспар ашылуда…",
+      "mall": "СОО · 3 қабат",
+      "parking": "Тұрақ",
+      "net": "Байланыс жоқ — картаның бір бөлігі жүктелмеді. Бетті жаңартыңыз",
+      "refresh": "Жаңарту"
+    },
+    "en": {
+      "loading": "Loading 3D model…",
+      "setup": "Preparing scene…",
+      "compile": "Preparing graphics…",
+      "failed": "3D model failed to load",
+      "nogl": "Plan view (no 3D)",
+      "qr": "You are at stand {id}",
+      "qrOpen": "opening the map…",
+      "mall": "Mall · 3 levels",
+      "parking": "Parking",
+      "net": "No connection — part of the map did not load. Refresh the page",
+      "refresh": "Refresh"
+    }
+  };
+  // </i18n:boot>
+  var t = T[lang] || T.ru;
+
+  // --- ссылка стойки QR (#qr=QR-03 | #qr=03 | прежнее #route=from:QR-03): номер — прямо из адреса, без данных и модуля
+  function normQr(v) {
+    var s = String(v == null ? '' : v).trim().toUpperCase().replace(/^QR[-_ ]?/, '');
+    return /^\d{1,3}$/.test(s) ? 'QR-' + (s.length < 2 ? '0' + s : s) : null;
+  }
+  var rtFrom = /(?:^|,)\s*from:\s*(QR-?\d+)/i.exec(hash.get('route') || '');
+  // [w5-K] и ?qr=QR-03 (постоянная ссылка домена ТРЦ переадресует на …/mall/?qr=QR-03; hash главнее) — как src/viewer/qr-link.js linkArgs
+  var qrId = normQr(hash.get('qr')) || (rtFrom ? normQr(rtFrom[1]) : null) || (!hash.get('route') ? normQr(params.get('qr')) : null);
+  // [w5-K] «моя машина» по ссылке (#car=C-145, ?car=, наклейка #spot=C-145&save=1) — сразу «Паркинг»: подзаголовок и поздняя модель
+  var saveOn = function (p) { var v = p.get('save'); return v === '' || v === '1' || v === 'true' || v === 'yes'; };
+  var carLink = !qrId && !!(hash.get('car') || params.get('car') || (hash.get('spot') && saveOn(hash)) || (!hash.get('spot') && params.get('spot') && saveOn(params)));
+  // область (app=mall|parking, синоним scope; DostykConfig.app у mall.html / parking.html) — подзаголовок
+  var app = params.get('app') || hash.get('app') || params.get('scope') || hash.get('scope') || cfg.app || (carLink ? 'parking' : '');
+  var appText = (params.get('demo') || hash.get('demo') || cfg.demo) ? '' : app === 'mall' ? t.mall : app === 'parking' ? t.parking : '';
+  var escHtml = function (x) { return String(x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+
+  // --- проверка WebGL2 (контекст сразу освобождаем)
+  var gl2 = false, reason = '';
+  // [w5-X] телефон с памятью ≤ 2 ГБ: строка видеокарты — для решения о режиме «2D» (main.js want2d), без второго контекста
+  var mem2 = +navigator.deviceMemory > 0 && +navigator.deviceMemory <= 2, gpu = '';
+  try {
+    var c = document.createElement('canvas');
+    var gl = c.getContext('webgl2', { failIfMajorPerformanceCaveat: false });
+    gl2 = !!gl;
+    if (!gl2) reason = 'webgl2 context unavailable';
+    if (gl && mem2) { var dbg = gl.getExtension('WEBGL_debug_renderer_info'); gpu = String(gl.getParameter(dbg ? dbg.UNMASKED_RENDERER_WEBGL : gl.RENDERER) || ''); }
+    var lose = gl && gl.getExtension('WEBGL_lose_context');
+    if (lose) lose.loseContext();
+  } catch (e) { reason = String(e && e.message || e); }
+  window.__dpBoot = { webgl2: gl2, reason: reason, t0: Date.now(), gpu: gpu || '' };
+
+  // --- постер. План: контур ТРЦ из data/building.json (упрощён до 0,5 м, x = восток, y = −север).
+  var OUTLINE = 'M-75.5 70L22 44.5L33 41.5L65.5 33L73 60L147 40L139 12L131.5 -15.5L117.5 -65L107 -58.5L105 -56.5L103.5 -54.5L92 -54.5L92 -52L91 -56.5L90 -59.5L88.5 -62L86 -64L82.5 -65.5L79 -66.5L75.5 -65L73 -63L70.5 -60L69.5 -54.5L70 -49.5L68.5 -47L65.5 -44L62.5 -48.5L56 -53L47.5 -58.5L49.5 -61.5L42 -66.5L35 -71.5L32 -67L28.5 -68.5L21.5 -70L-91 -61.5L-101.5 -61L-107 -62L-111.5 -62L-118 -61L-123 -59.5L-128 -56.5L-132.5 -52L-136.5 -47.5L-141 -39.5L-143 -34.5L-144 -29L-144 -23.5L-143.5 -19L-142 -13.5L-128.5 34L-127 39.5L-119.5 38.5L-112 61L-97 56.5L-91.5 74L-81.5 71.5Z';
+  var CUBE = 'M49.5 -61.5L42 -66.5L35 -71.5L32 -67L28.5 -61.5L43 -51.5L47.5 -58.5Z';
+  var PAVILION = 'M92 -52L91 -56.5L90 -59.5L88.5 -62L86 -64L82.5 -65.5L79 -66.5L75.5 -65L73 -63L70.5 -60L69.5 -54.5L70 -49.5L72.5 -43.5L75.5 -37L79.5 -33L85 -32L90 -35L92 -39L92.5 -42L92.5 -47Z';
+  var SKY_N = 'M-76 -31L-74.5 -17.5L-60 -21.5L-48 -25L-36 -27L-26 -28L-14.5 -28.5L-1 -28L10 -27.5L11.5 -42L-1.5 -41.5L-13 -41.5L-27 -42L-39.5 -40.5L-53 -39L-64.5 -35.5Z';
+  var SKY_S = 'M-50.5 33.5L-37 32L-23 28L-11.5 25L2 21L8 19L2 5L-4.5 7.5L-16.5 11L-28 14L-39.5 16L-51.5 18.5L-64 19L-64 33.5Z';
+
+  var css = '' +
+    '#dp-poster{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+    'background:linear-gradient(180deg,#E9EEF2 0%,#DFE6EC 62%,#D9D4CA 100%);color:#5E584E;' +
+    'font:500 12px/1.4 Onest,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;transition:opacity .45s ease;}' +
+    '#dp-poster.dp-hide{opacity:0;pointer-events:none}' +
+    '#dp-poster svg{width:min(78vw,520px);height:auto;overflow:visible}' +
+    '#dp-poster .dp-o{fill:#F3F0E9;stroke:#B7AC94;stroke-width:1.1;vector-effect:non-scaling-stroke;stroke-linejoin:round;' +
+    'stroke-dasharray:4000;stroke-dashoffset:4000;animation:dp-draw 2.2s ease-out forwards}' +
+    '#dp-poster .dp-sh{fill:rgba(60,52,40,.10);transform:translate(1.6px,2.4px)}' +
+    '#dp-poster .dp-c{fill:#A9C3C6;stroke:#7F9DA2;stroke-width:.8;vector-effect:non-scaling-stroke}' +
+    '#dp-poster .dp-p{fill:#E6DFCF;stroke:#B7AC94;stroke-width:.8;vector-effect:non-scaling-stroke}' +
+    '#dp-poster .dp-s{fill:none;stroke:#C9BFA9;stroke-width:.8;stroke-dasharray:3 2;vector-effect:non-scaling-stroke}' +
+    '#dp-poster .dp-w{margin-top:22px;letter-spacing:.42em;font-weight:600;font-size:13px;color:#4E483F;padding-left:.42em}' +
+    '#dp-poster .dp-bar{margin-top:14px;width:160px;height:2px;background:rgba(94,88,78,.15);border-radius:2px;overflow:hidden}' +
+    '#dp-poster .dp-bar i{display:block;height:100%;width:6%;background:#8C7A57;transition:width .3s ease}' +
+    '#dp-poster .dp-t{margin-top:10px;opacity:.75;min-height:1.4em;text-align:center;padding:0 16px}' +
+    '#dp-poster.dp-fail .dp-bar{display:none}#dp-poster.dp-fail .dp-o{animation:none;stroke-dashoffset:0}' +
+    // ночь: тёмный градиент, светлые линии, золотистая полоса
+    '#dp-poster.dp-dark{background:linear-gradient(180deg,#0B1020 0%,#11172A 62%,#151B2E 100%);color:#AEB5C4}' +
+    '#dp-poster.dp-dark .dp-o{fill:#1C2336;stroke:#4A5470}#dp-poster.dp-dark .dp-sh{fill:rgba(0,0,0,.35)}' +
+    '#dp-poster.dp-dark .dp-c{fill:#3C5A78;stroke:#6F8DB0}#dp-poster.dp-dark .dp-p{fill:#262E44;stroke:#4A5470}' +
+    '#dp-poster.dp-dark .dp-s{stroke:#3A4360}#dp-poster.dp-dark .dp-w{color:#C9CFDB}' +
+    '#dp-poster.dp-dark .dp-bar{background:rgba(201,207,219,.16)}#dp-poster.dp-dark .dp-bar i{background:#C9A86A}' +
+    // заставка стойки QR: белая «таблетка» с синей точкой (как «Вы здесь» в интерфейсе), крупно — читается с телефона
+    '#dp-poster .dp-qr{margin-top:18px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:4px 8px;max-width:calc(100vw - 32px);box-sizing:border-box;' +
+    'padding:10px 18px;border-radius:24px;background:#fff;color:#1C2127;font-size:16px;font-weight:500;line-height:1.3;box-shadow:0 2px 12px rgba(40,50,70,.12)}' +
+    '#dp-poster .dp-qr i{flex:none;width:10px;height:10px;border-radius:50%;background:#1F6FEB;box-shadow:0 0 0 4px rgba(31,111,235,.22)}' +
+    '#dp-poster .dp-qr b{font-weight:650}#dp-poster .dp-qr span{color:#5B6472}' +
+    '#dp-poster .dp-app{margin-top:6px;font-size:14px;font-weight:600;color:#1F6FEB;letter-spacing:.02em}' +
+    '#dp-poster.dp-dark .dp-qr{background:#1C2336;color:#E6EAF2;box-shadow:0 2px 12px rgba(0,0,0,.4)}#dp-poster.dp-dark .dp-qr span{color:#AEB5C4}' +
+    '#dp-poster.dp-dark .dp-app{color:#7FAEFF}' +
+    '@keyframes dp-draw{to{stroke-dashoffset:0}}' +
+    '@media (prefers-reduced-motion:reduce){#dp-poster .dp-o{animation:none;stroke-dashoffset:0}#dp-poster{transition:opacity .2s}}';
+  var style = document.createElement('style');
+  style.textContent = css;
+  (document.head || document.documentElement).appendChild(style);
+
+  var el = document.createElement('div');
+  el.id = 'dp-poster';
+  if (night) el.className = 'dp-dark';
+  el.setAttribute('role', 'status');
+  el.setAttribute('aria-live', 'polite');
+  el.innerHTML =
+    '<svg viewBox="-152 -82 304 164" aria-hidden="true">' +
+    '<path class="dp-sh" d="' + OUTLINE + '"/>' +
+    '<path class="dp-o" d="' + OUTLINE + '"/>' +
+    '<path class="dp-s" d="' + SKY_N + '"/><path class="dp-s" d="' + SKY_S + '"/>' +
+    '<path class="dp-p" d="' + PAVILION + '"/><path class="dp-c" d="' + CUBE + '"/>' +
+    '</svg>' +
+    '<div class="dp-w">DOSTYK PLAZA</div>' +
+    (appText && !qrId ? '<div class="dp-app">' + escHtml(appText) + '</div>' : '') +
+    (qrId ? '<div class="dp-qr"><i></i><b>' + escHtml(t.qr.replace('{id}', qrId)) + '</b> <span>· ' + escHtml(t.qrOpen) + '</span></div>' : '') +
+    '<div class="dp-bar"><i></i></div>' +
+    '<div class="dp-t">' + (String(pick('quality') || '') === '2d' ? t.nogl : t.loading) + '</div>'; // [w5-X] режим «2D» — без «3D-модели»
+  // <body> ещё нет: вешаем на <html>, позже переносим в body
+  document.documentElement.appendChild(el);
+  document.addEventListener('DOMContentLoaded', function () {
+    if (el.parentNode && document.body && el.parentNode !== document.body) document.body.appendChild(el);
+  });
+
+  var bar = el.querySelector('.dp-bar i');
+  var txt = el.querySelector('.dp-t');
+  var failed = false;
+  var hidden = false;
+
+  var P = {
+    el: el,
+    progress: function (f, label) {
+      if (failed) return;
+      bar.style.width = Math.max(6, Math.min(100, Math.round(f * 100))) + '%';
+      if (label) txt.textContent = label;
+    },
+    text: function (s) { txt.textContent = s; },
+    /** fast — посадка по QR: под заставкой уже кадр стойки, гасим быстрее (0,25 с вместо 0,45 с). */
+    hide: function (fast) {
+      if (failed) return;
+      if (!hidden) { hidden = true; mark('poster-hide'); } // [w4-C] посетитель увидел карту (по QR — уже «Вы здесь»)
+      if (fast) el.style.transitionDuration = '.25s';
+      el.classList.add('dp-hide');
+      setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 600);
+    },
+    /** Модуль не загрузился: постер остаётся, команды получают ошибку, событие error уходит хосту. */
+    fail: function (code, message) {
+      if (failed) return;
+      failed = true;
+      el.classList.add('dp-fail');
+      el.classList.remove('dp-hide');
+      txt.textContent = t.failed;
+      var V = window.DostykViewer;
+      if (!V || !V._post) return;
+      V._post({ dp: 1, kind: 'evt', name: 'error', payload: { code: code, message: message || '', fatal: true } });
+      var answer = function (cmd) {
+        if (!cmd || !cmd.id) return;
+        if (cmd.name === 'getState') {
+          V._post({ dp: 1, kind: 'res', id: cmd.id, ok: true, result: { protocol: 1, renderer: 'none', mode: 'exterior', level: null, selected: null, ready: false, error: code } });
+        } else {
+          V._post({ dp: 1, kind: 'res', id: cmd.id, ok: false, error: { code: code, message: 'viewer module not running' } });
+        }
+      };
+      var q = V._q || [];
+      V._q = [];
+      q.forEach(answer);
+      V.receive = function (m) {
+        var cmd = m;
+        if (typeof m === 'string') { try { cmd = JSON.parse(m); } catch (e) { return false; } }
+        if (cmd && cmd.dp === 1 && cmd.kind === 'cmd') answer(cmd);
+        return false;
+      };
+    },
+    texts: t,
+    /** Стойка QR из адреса ('QR-03') или null. */
+    qr: qrId,
+    /**
+     * [w3v-F] Чанк вьюера не загрузился и повтор не помог (Chrome не перезапрашивает упавший модуль до перезагрузки):
+     * перезагрузить страницу — только в браузере (не во фрейме, http/https), один раз за 60 с (sessionStorage) и только если
+     * сайт отвечает (HEAD страницы; без сети перезагрузка дала бы страницу ошибки браузера вместо карты). → Promise<true> — пошла.
+     */
+    reloadOnce: function () {
+      try {
+        if (window.top !== window || !/^https?:$/.test(location.protocol)) return Promise.resolve(false);
+        if (Date.now() - (+sessionStorage.getItem('dp-chunk-reload') || 0) < 60000) return Promise.resolve(false);
+        return fetch(location.href.split('#')[0], { method: 'HEAD', cache: 'no-store' }).then(function (r) {
+          if (!r.ok) return false;
+          sessionStorage.setItem('dp-chunk-reload', String(Date.now()));
+          location.reload();
+          return true;
+        }).catch(function () { return false; });
+      } catch (e) { return Promise.resolve(false); }
+    },
+    /** [w3v-F] Плашка «Нет связи… Обновить» вверху (как floors.js: .dpf-netfail) — часть карты не загрузилась, перезагрузить сами не можем. */
+    netFail: function () {
+      if (!document.body || document.querySelector('.dpf-netfail')) return;
+      var n = document.createElement('div');
+      n.className = 'dpf-netfail';
+      n.setAttribute('role', 'alert');
+      n.style.cssText = 'position:fixed;left:12px;right:12px;margin:0 auto;top:calc(12px + env(safe-area-inset-top,0px));z-index:2147483000;' +
+        'display:flex;align-items:center;gap:12px;max-width:520px;box-sizing:border-box;padding:10px 12px 10px 16px;border-radius:14px;' +
+        'background:#1F2328;color:#fff;font:500 14px/1.35 Onest,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.25)';
+      var s = document.createElement('span'), b = document.createElement('button');
+      s.style.flex = '1 1 auto';
+      s.textContent = t.net;
+      b.type = 'button';
+      b.style.cssText = 'flex:none;border:0;border-radius:10px;padding:8px 12px;background:#fff;color:#1F2328;font:inherit;font-weight:600;cursor:pointer';
+      b.textContent = t.refresh;
+      b.addEventListener('click', function () { location.reload(); });
+      n.appendChild(s);
+      n.appendChild(b);
+      document.body.appendChild(n);
+    },
+  };
+  window.DostykPoster = P;
+  mark('poster');
+
+  // --- [w4-C] «Здание»: GLB экстерьера качается сразу, параллельно с модулем вьюера (а не после его разбора и createStage).
+  // Не качаем: встроенная модель (viewer.html: #dp-model), file://, нет WebGL2 (будет SVG-план) и поздняя модель (main-late.js:
+  // посадка по QR или сразу «ТРЦ» / «Паркинг» — app=mall|parking без intro; модель после этажей, не отнимает у них канал;
+  // условие — как lateMod / directApp в main.js). loader.js берёт эту загрузку (DostykPoster.model), если адрес тот же;
+  // тело читаем сами — иначе по HTTP/1.1 загрузка встала бы на паузу, пока модуль вьюера не начнёт читать.
+  var yes = function (v) { return v === '1' || v === 'true'; };
+  var ui = String(pick('ui') || '');
+  var demo = pick('demo');
+  var landing = !!qrId && ui !== '0' && ui !== 'false' && !demo;
+  var intro = yes(String(pick('intro') || ''));
+  var noLate = String(pick('late') || '') === '0';
+  // [w5-X] режим «2D» (?quality=2d) и телефон с памятью ≤ 2 ГБ (возможен автопереход в 2D) — модель заранее не качаем
+  var prefetchBase = gl2 && /^https?:$/.test(location.protocol) && !mem2;
+  // [w5-L круг 1] c — configure из очереди заглушки (главнее адреса, как config.js); wantCore — не 2D, wantModel — ещё и не поздняя
+  function wantCore(c) { return prefetchBase && (c && c.quality != null ? c.quality : String(pick('quality') || '')) !== '2d'; }
+  function wantModel(c) {
+    var a = c && c.app != null ? c.app : app;
+    var late = (landing || (!demo && !intro && (a === 'mall' || a === 'parking'))) && !noLate;
+    return wantCore(c) && !late;
+  }
+  /** [w5-L круг 1] configure в очереди stub.js (до старта модуля): {app?, quality?} или null. */
+  function queuedCfg() {
+    var V = window.DostykViewer, q = V && V._stub && V._q, out = null;
+    if (!q || !q.length) return null;
+    for (var i = 0; i < q.length; i++) {
+      var p = q[i] && q[i].name === 'configure' && q[i].payload;
+      if (!p || typeof p !== 'object') continue;
+      out = out || {};
+      if (p.app != null) out.app = String(p.app);
+      if (p.quality != null) out.quality = String(p.quality);
+    }
+    return out;
+  }
+  // [w5-L круг 1] канал хоста без app в адресе и DostykConfig: режим придёт configure на booting (APP-INTEGRATION §3, шаг 6).
+  // Ядро нужно любому 3D-режиму — качаем сразу; окружение ждёт configure («ТРЦ» / «Паркинг» его не берут — 0,83 МБ без дела)
+  var hostCh = false;
+  try {
+    var w0 = window;
+    hostCh = !!((w0.DostykHost && typeof w0.DostykHost.postMessage === 'function') ||
+      (w0.webkit && w0.webkit.messageHandlers && w0.webkit.messageHandlers.DostykHost) ||
+      (w0.ReactNativeWebView && typeof w0.ReactNativeWebView.postMessage === 'function') || (w0.parent && w0.parent !== w0));
+  } catch (e) { hostCh = false; }
+  var waitCfg = hostCh && !app && !landing && !demo && !intro && !noLate && String(pick('quality') || '') !== '2d';
+  var CFG_WAIT = 300; // мс после разбора документа
+  // dev-сервер: poster.js подключён по src (/src/boot/poster.js), модель — /dist/model/; в сборке скрипт встроен — model/ рядом
+  var devScript = !!(document.currentScript && /\/src\/boot\/poster\.js/.test(document.currentScript.src || ''));
+  // [w5-L] без ?model= — «ядро» (dostyk-plaza.core.glb) и «окружение» (dostyk-plaza.env.glb) параллельно (loader.js CORE_FILE,
+  // ENV_FILE: DostykPoster.model и DostykPoster.modelEnv); ядра на сервере нет — loader.js скачает полный dostyk-plaza.glb сам
+  // [w5-L круг 1] part: 'core' | 'env' | без него — оба
+  function prefetchModel(part) {
+    if (document.getElementById('dp-model') || typeof fetch !== 'function') return;
+    var dir = devScript ? '/dist/model/' : 'model/';
+    if (part !== 'env' && !P.model) {
+      mark('model-prefetch');
+      P.model = prefetchGlb(pick('model') || dir + 'dostyk-plaza.core.glb');
+    }
+    if (part !== 'core' && P.model && !P.modelEnv && !pick('model')) P.modelEnv = prefetchGlb(dir + 'dostyk-plaza.env.glb');
+  }
+  function prefetchGlb(rel) {
+    var url;
+    try { url = new URL(rel, document.baseURI).href; } catch (e) { return null; }
+    var pre = { url: url, loaded: 0, total: 0, status: 0, ok: false, used: false, onProgress: null, promise: null };
+    var tick = function () { if (pre.onProgress) { try { pre.onProgress(pre.loaded, pre.total); } catch (e) { /* слушатель не важен */ } } };
+    // [w5-L круг 1] для cancelPre
+    try { pre.ctl = typeof AbortController === 'function' ? new AbortController() : null; } catch (e) { pre.ctl = null; }
+    pre.promise = fetch(url, pre.ctl ? { signal: pre.ctl.signal } : {}).then(function (res) {
+      pre.status = res.status;
+      pre.ok = res.ok;
+      pre.total = +res.headers.get('content-length') || 0;
+      if (!res.ok) return null;
+      if (!res.body || !res.body.getReader) return res.arrayBuffer().then(function (b) { pre.loaded = b.byteLength; tick(); return b; });
+      var reader = res.body.getReader(), chunks = [];
+      var pump = function () {
+        return reader.read().then(function (r) {
+          if (r.done) {
+            var out = new Uint8Array(pre.loaded), o = 0;
+            for (var i = 0; i < chunks.length; i++) { out.set(chunks[i], o); o += chunks[i].byteLength; }
+            chunks = null;
+            return out.buffer;
+          }
+          chunks.push(r.value);
+          pre.loaded += r.value.byteLength;
+          tick();
+          return pump();
+        });
+      };
+      return pump();
+    });
+    pre.promise.catch(function (e) { /* сеть оборвалась — loader.js скачает сам */ });
+    return pre;
+  }
+  /** [w5-L круг 1] Снять предзагрузку P[k] ('model' | 'modelEnv'), пока loader.js её не взял. */
+  function cancelPre(k) {
+    var pre = P[k];
+    if (!pre || pre.used) return;
+    pre.aborted = true;
+    try { if (pre.ctl) pre.ctl.abort(); } catch (e) { /* старый WebView — просто забудем */ }
+    P[k] = null;
+  }
+  /**
+   * [w5-L круг 1] Окружение ждёт configure (обёртка receive заглушки): «Здание» — качать, «ТРЦ» / «Паркинг» — нет, 2D — снять и ядро.
+   * Модуль стартовал раньше (__dpModuleStarted) — решает loader.js. Ничего за CFG_WAIT — качаем; поздний configure до старта снимет.
+   * P.prefetchBy: address | configure | module | timeout | timeout+configure.
+   */
+  function awaitCfg() {
+    var V = window.DostykViewer, orig = V && V._stub && typeof V.receive === 'function' ? V.receive : null, done = false;
+    P.prefetchBy = 'wait';
+    var stop = function () { done = true; if (orig && V.receive === wrap) V.receive = orig; };
+    var check = function () {
+      if (done) return;
+      if (window.__dpModuleStarted) { if (!P.modelEnv) P.prefetchBy = 'module'; stop(); return; }
+      var c = queuedCfg();
+      if (!c) return;
+      stop();
+      P.prefetchBy = P.modelEnv ? 'timeout+configure' : 'configure';
+      if (wantModel(c)) { prefetchModel('env'); return; }
+      cancelPre('modelEnv');
+      if (!wantCore(c)) cancelPre('model');
+    };
+    var wrap = function () { var r = orig.apply(this, arguments); check(); return r; };
+    if (orig) V.receive = wrap;
+    setTimeout(function () {
+      check();
+      if (done) return;
+      P.prefetchBy = 'timeout';
+      prefetchModel('env');
+      if (!orig) stop();
+    }, CFG_WAIT);
+  }
+  var modelStarted = false;
+  function startModel() {
+    if (modelStarted || document.readyState === 'loading') return;
+    modelStarted = true;
+    if (P.model || document.getElementById('dp-model') || typeof fetch !== 'function') return;
+    var c = queuedCfg();
+    if (c || !waitCfg) { P.prefetchBy = c ? 'configure' : 'address'; if (wantModel(c)) prefetchModel(); return; }
+    prefetchModel('core');
+    awaitCfg();
+  }
+  if (prefetchBase) {
+    // встроенная модель (#dp-model) стоит в <body> — смотрим, когда документ разобран (до запуска модуля вьюера)
+    if (document.readyState !== 'loading') startModel();
+    else document.addEventListener('readystatechange', startModel);
+  }
+
+  // --- сторож модуля: сетевой сбой <script type=module> или модуль не стартовал к событию load
+  window.addEventListener('error', function (e) {
+    var s = e && e.target;
+    if (s && s.tagName === 'SCRIPT' && s.type === 'module' && !window.__dpModuleStarted) P.fail('E_MODULE_LOAD', 'module script failed: ' + (s.src || 'inline'));
+  }, true);
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      if (!window.__dpModuleStarted) P.fail('E_MODULE_LOAD', 'viewer module did not start (unsupported browser or load error)');
+    }, 1500);
+  });
+})();
+</script>
+  <script>(function(h,s){if(!/(?:^|[#&])qr=|route=from(?::|%3A)\s*QR/i.test(h))return;var a=["./assets/labels-B1hHNUTL.css","./assets/route-ui-BzRQhgyi.css","./assets/floors-ui-CPlsiBle.css","./assets/floors-BbD6bjKP.js","./assets/poly-ty6ODsPX.js","./assets/parking-D9_7Hca8.js","./assets/geometry-DRNxi0sX.js","./assets/level-ids-D727EiMK.js","./assets/l1-CfhtW5EL.js","./assets/links-BweXbzLD.js","./assets/BufferGeometryUtils-DdSxdpwN.js","./assets/floors-p1-IrHwl1uF.js","./assets/floors-build-Ba4aNpzU.js","./assets/labels-CRPb1Yu0.js","./assets/floors-fx-CTtWt6jB.js","./assets/main-late-CcidTnVJ.js","./assets/main-data-floors-Cca6_8gh.js","./assets/building-D4AaO1cx.js","./assets/l1-runtime-CMlW37Hn.js","./assets/route-runtime-R9KmG9DS.js","./assets/route-api-i7dZ2fp8.js","./assets/route-ui-yStJ-dHa.js","./assets/i18n-Bvqx7h9N.js","./assets/floors-ui-BsX6JLO6.js","./assets/popular-BWlhKhyV.js"],L={"L2":["./assets/l2-runtime-CCYFUggt.js"],"L3":["./assets/l3-runtime-B-f2f6vp.js"]};var m=/(?:^|[#&])qr=(?:QR)?[-_ ]?(\d{1,3})/i.exec(h)||/from(?::|%3A)\s*QR-?(\d{1,3})/i.exec(h),n=m?+m[1]:0,v=n>=30&&n<40?3:n>=20&&n<30?2:1;var w=/(?:^|[#&])to=|(?:^|[#&])route=[^&]*to(?::|%3A)/i.test(h)||/[?&]qrfirst=0/.test(s)?[2,3]:v>1?[v,v-1]:[];for(var j=0;j<w.length;j++)if(L["L"+w[j]])a=a.concat(L["L"+w[j]]);for(var i=0;i<a.length;i++){var l=document.createElement("link"),c=/\.css$/.test(a[i]);l.rel=c?"preload":"modulepreload";if(c)l.as="style";l.crossOrigin="";l.href=a[i];document.head.appendChild(l);}})(location.hash,location.search);</script>
+  <script type="module" crossorigin src="./assets/index-CTxzppzT.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <noscript><p style="position:fixed;inset:auto 0 40% 0;text-align:center;color:#5E584E">Dostyk Plaza 3D: нужен JavaScript</p></noscript>
+  <!-- Ступень 3: модуль вьюера (ES2020; старые WebView, не умеющие модули, остаются на постере → E_MODULE_LOAD). -->
+</body>
+</html>

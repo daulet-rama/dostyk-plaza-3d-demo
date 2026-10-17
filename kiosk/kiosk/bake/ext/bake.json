@@ -1,0 +1,155 @@
+{
+ "version": 1,
+ "built": "2026-10-16T23:21:26.566Z",
+ "date": "2026-10-17",
+ "profile": "kiosk",
+ "atlases": [
+  "W1",
+  "W2",
+  "W3",
+  "R",
+  "G"
+ ],
+ "res": 4096,
+ "resLight": 2048,
+ "sizes": {
+  "albedo": 4096,
+  "light": 2048,
+  "day": 2048
+ },
+ "skyMax": 0.72716,
+ "duskMax": 1.33752,
+ "emitMax": 9,
+ "dayAo": 0,
+ "scales": {
+  "duskMax": 1.33752,
+  "emitMax": 9,
+  "skyMax": 0.72716
+ },
+ "samples": {
+  "ao": 256,
+  "dusk": 1024,
+  "sky": 512,
+  "bounce": 512,
+  "albedo": 16,
+  "emit": 4,
+  "nrm": 4,
+  "cov": 1
+ },
+ "device": "gpu",
+ "aoDist": 4,
+ "calib": {
+  "s": 1.7037,
+  "sAuto": 1.7037,
+  "daySat": 0.55,
+  "site": {
+   "sun": {
+    "color": "#FFF2DF",
+    "intensity": 3.75
+   },
+   "hemi": {
+    "sky": "#97AED6",
+    "ground": "#E6DFD0",
+    "intensity": 2
+   }
+  },
+  "probe": {
+   "sky": [
+    1.7561744451522827,
+    3.3677167892456055,
+    6.387588024139404
+   ],
+   "sun": [
+    0.1959710568189621,
+    0.1959710568189621,
+    0.1959710568189621
+   ],
+   "sunNorm": 0.3183097605957915
+  }
+ },
+ "texelCm": {
+  "W1": 4.5,
+  "W2": 3.9,
+  "W3": 4.9,
+  "R": 7.8,
+  "G": 5.7
+ },
+ "tris": 76988,
+ "retag": {
+  "DX_W2.cubein": 58,
+  "DX_W2.cubeshop": 99
+ },
+ "trees": 2,
+ "stats": {
+  "W1": {
+   "device": "gpu",
+   "samples": {
+    "ao": 256,
+    "dusk": 1024,
+    "sky": 512,
+    "bounce": 512,
+    "albedo": 16,
+    "emit": 4,
+    "nrm": 4,
+    "cov": 1
+   },
+   "seconds": 77.8
+  },
+  "W2": {
+   "device": "gpu",
+   "samples": {
+    "ao": 256,
+    "dusk": 1024,
+    "sky": 512,
+    "bounce": 512,
+    "albedo": 16,
+    "emit": 4,
+    "nrm": 4,
+    "cov": 1
+   },
+   "seconds": 98.2
+  },
+  "W3": {
+   "device": "gpu",
+   "samples": {
+    "ao": 256,
+    "dusk": 1024,
+    "sky": 512,
+    "bounce": 512,
+    "albedo": 16,
+    "emit": 4,
+    "nrm": 4,
+    "cov": 1
+   },
+   "seconds": 73
+  },
+  "R": {
+   "device": "gpu",
+   "samples": {
+    "ao": 256,
+    "dusk": 1024,
+    "sky": 512,
+    "bounce": 512,
+    "albedo": 16,
+    "emit": 4,
+    "nrm": 4,
+    "cov": 1
+   },
+   "seconds": 80
+  },
+  "G": {
+   "device": "gpu",
+   "samples": {
+    "ao": 256,
+    "dusk": 1024,
+    "sky": 512,
+    "bounce": 512,
+    "albedo": 16,
+    "emit": 4,
+    "nrm": 4,
+    "cov": 1
+   },
+   "seconds": 104.1
+  }
+ }
+}

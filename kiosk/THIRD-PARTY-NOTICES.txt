@@ -1,0 +1,432 @@
+Dostyk Plaza 3D viewer 7.2.0 (8c84ffe, 2026-10-17T07:51:58Z)
+Уведомления о лицензиях сторонних компонентов / Third-party software notices
+
+Вьюер включает перечисленные ниже компоненты с открытой лицензией. Их тексты лицензий приведены полностью.
+This viewer includes the open-source components listed below; their license texts are reproduced in full.
+
+Данные / Data: контуры ТРЦ, соседние здания, дороги и деревья — © участники OpenStreetMap / © OpenStreetMap contributors,
+Open Database License (ODbL) 1.0, https://www.openstreetmap.org/copyright. Подпись «© OpenStreetMap» во вьюере сохранять.
+
+Компоненты / Components:
+  - Onest font (@fontsource/onest 5.3.1) — OFL-1.1 — https://github.com/fontsource/font-files
+  - camera-controls 3.1.2 — MIT — https://github.com/yomotsu/camera-controls
+  - clipper2-js 1.2.4 — BSL-1.0 — https://github.com/IRobot1/clipper2-ts/tree/master/projects/clipper2-js
+  - flatbush 4.6.2 — ISC — https://github.com/mourner/flatbush
+  - flatqueue 3.1.0 — ISC — https://github.com/mourner/flatqueue
+  - minisearch 7.2.0 — MIT — https://github.com/lucaong/minisearch
+  - three 0.186.1 — MIT — https://github.com/mrdoob/three.js
+  - uqr 0.1.3 — MIT — https://github.com/unjs/uqr
+  - fflate 0.8.2 (three/examples/jsm/libs/fflate.module.js) — MIT — https://github.com/101arrowz/fflate
+  - meshoptimizer decoder (three/examples/jsm/libs/meshopt_decoder.module.js) — MIT — https://github.com/zeux/meshoptimizer
+
+==============================================================================
+Onest font (@fontsource/onest 5.3.1) — OFL-1.1
+https://github.com/fontsource/font-files
+==============================================================================
+
+Copyright 2021 The Onest Project Authors (https://github.com/simpals/onest)
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at:
+http://scripts.sil.org/OFL
+
+
+-----------------------------------------------------------
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------
+
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide
+development of collaborative font projects, to support the font creation
+efforts of academic and linguistic communities, and to provide a free and
+open framework in which fonts may be shared and improved in partnership
+with others.
+
+The OFL allows the licensed fonts to be used, studied, modified and
+redistributed freely as long as they are not sold by themselves. The
+fonts, including any derivative works, can be bundled, embedded,
+redistributed and/or sold with any software provided that any reserved
+names are not used by derivative works. The fonts and derivatives,
+however, cannot be released under any other type of license. The
+requirement for fonts to remain under this license does not apply
+to any document created using the fonts or their derivatives.
+
+DEFINITIONS
+"Font Software" refers to the set of files released by the Copyright
+Holder(s) under this license and clearly marked as such. This may
+include source files, build scripts and documentation.
+
+"Reserved Font Name" refers to any names specified as such after the
+copyright statement(s).
+
+"Original Version" refers to the collection of Font Software components as
+distributed by the Copyright Holder(s).
+
+"Modified Version" refers to any derivative made by adding to, deleting,
+or substituting -- in part or in whole -- any of the components of the
+Original Version, by changing formats or by porting the Font Software to a
+new environment.
+
+"Author" refers to any designer, engineer, programmer, technical
+writer or other person who contributed to the Font Software.
+
+PERMISSION & CONDITIONS
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of the Font Software, to use, study, copy, merge, embed, modify,
+redistribute, and sell modified and unmodified copies of the Font
+Software, subject to the following conditions:
+
+1) Neither the Font Software nor any of its individual components,
+in Original or Modified Versions, may be sold by itself.
+
+2) Original or Modified Versions of the Font Software may be bundled,
+redistributed and/or sold with any software, provided that each copy
+contains the above copyright notice and this license. These can be
+included either as stand-alone text files, human-readable headers or
+in the appropriate machine-readable metadata fields within text or
+binary files as long as those fields can be easily viewed by the user.
+
+3) No Modified Version of the Font Software may use the Reserved Font
+Name(s) unless explicit written permission is granted by the corresponding
+Copyright Holder. This restriction only applies to the primary font name as
+presented to the users.
+
+4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
+Software shall not be used to promote, endorse or advertise any
+Modified Version, except to acknowledge the contribution(s) of the
+Copyright Holder(s) and the Author(s) or with their explicit written
+permission.
+
+5) The Font Software, modified or unmodified, in part or in whole,
+must be distributed entirely under this license, and must not be
+distributed under any other license. The requirement for fonts to
+remain under this license does not apply to any document created
+using the Font Software.
+
+TERMINATION
+This license becomes null and void if any of the above conditions are
+not met.
+
+DISCLAIMER
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
+DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
+OTHER DEALINGS IN THE FONT SOFTWARE.
+
+
+==============================================================================
+camera-controls 3.1.2 — MIT
+https://github.com/yomotsu/camera-controls
+==============================================================================
+
+MIT License
+
+Copyright (c) 2017 @yomotsu
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+==============================================================================
+clipper2-js 1.2.4 — BSL-1.0
+https://github.com/IRobot1/clipper2-ts/tree/master/projects/clipper2-js
+==============================================================================
+
+Clipper2 — Copyright (c) Angus Johnson 2010-2023 (https://github.com/AngusJohnson/Clipper2);
+JavaScript port clipper2-js — IRobot1 (https://github.com/IRobot1/clipper2-ts).
+
+Boost Software License - Version 1.0 - August 17th, 2003
+
+Permission is hereby granted, free of charge, to any person or organization
+obtaining a copy of the software and accompanying documentation covered by
+this license (the "Software") to use, reproduce, display, distribute,
+execute, and transmit the Software, and to prepare derivative works of the
+Software, and to permit third-parties to whom the Software is furnished to
+do so, all subject to the following:
+
+The copyright notices in the Software and this entire statement, including
+the above license grant, this restriction and the following disclaimer,
+must be included in all copies of the Software, in whole or in part, and
+all derivative works of the Software, unless such copies or derivative
+works are solely in the form of machine-executable object code generated by
+a source language processor.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. IN NO EVENT
+SHALL THE COPYRIGHT HOLDERS OR ANYONE DISTRIBUTING THE SOFTWARE BE LIABLE
+FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
+
+==============================================================================
+flatbush 4.6.2 — ISC
+https://github.com/mourner/flatbush
+==============================================================================
+
+ISC License
+
+Copyright (c) 2022, Vladimir Agafonkin
+
+Permission to use, copy, modify, and/or distribute this software for any purpose
+with or without fee is hereby granted, provided that the above copyright notice
+and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+THIS SOFTWARE.
+
+
+==============================================================================
+flatqueue 3.1.0 — ISC
+https://github.com/mourner/flatqueue
+==============================================================================
+
+ISC License
+
+Copyright (c) 2025, Volodymyr Agafonkin
+
+Permission to use, copy, modify, and/or distribute this software for any purpose
+with or without fee is hereby granted, provided that the above copyright notice
+and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+THIS SOFTWARE.
+
+
+==============================================================================
+minisearch 7.2.0 — MIT
+https://github.com/lucaong/minisearch
+==============================================================================
+
+Copyright 2022 Luca Ongaro
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+==============================================================================
+three 0.186.1 — MIT
+https://github.com/mrdoob/three.js
+==============================================================================
+
+The MIT License
+
+Copyright © 2010-2026 three.js authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+
+==============================================================================
+uqr 0.1.3 — MIT
+https://github.com/unjs/uqr
+==============================================================================
+
+MIT License
+
+Copyright (c) Project Nayuki
+Copyright (c) 2023 Anthony Fu <https://github.com/antfu>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+==============================================================================
+fflate 0.8.2 (three/examples/jsm/libs/fflate.module.js) — MIT
+https://github.com/101arrowz/fflate
+==============================================================================
+
+MIT License
+
+Copyright (c) 2023 Arjun Barrett
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+==============================================================================
+meshoptimizer decoder (three/examples/jsm/libs/meshopt_decoder.module.js) — MIT
+https://github.com/zeux/meshoptimizer
+==============================================================================
+
+MIT License
+
+Copyright (C) 2016-2026, by Arseny Kapoulkine (arseny.kapoulkine@gmail.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+
+==============================================================================
+Активы / Assets: demo/cars/ (ATTRIBUTION.md)
+==============================================================================
+
+3D car models (Dostyk Plaza demo site, parking P1) / 3D-модели машин (демо-сайт Dostyk Plaza, паркинг P1)
+
+These models are licensed under Creative Commons Attribution 4.0 International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/
+Source: Sketchfab, via the Objaverse dataset (Allen Institute for AI, ODC-By 1.0), https://huggingface.co/datasets/allenai/objaverse
+Modified (изменено) for the web demo: scale and axes, interior and hidden faces removed, decimated / remeshed levels of detail,
+baked texture and vertex colours (albedo x ambient occlusion), own materials (paint colour per instance), plates without characters.
+
+- "Mazda CX-5" by tnnv (https://sketchfab.com/tnnv), CC BY 4.0, https://sketchfab.com/3d-models/mazda-cx-5-0ca0354c7b2a41bbb84c835ff046e8e5 (modified) — files mazda_cx5.glb, mazda_cx5_hero.glb
+- "VW Tiguan 2021" by Hyap (https://sketchfab.com/source5525), CC BY 4.0, https://sketchfab.com/3d-models/vw-tiguan-2021-0a11d748fd8f4b3f9bc879aed8d6d208 (modified) — vw_tiguan_2021.glb
+- "Mercedes E Class W212" by Peter_D (https://sketchfab.com/better_peter), CC BY 4.0, https://sketchfab.com/3d-models/mercedes-e-class-w212-119c5e10733142b197aa53b86f6aeb04 (modified) — mercedes_e_w212.glb
+- "Tesla M3 model" by wintrez (https://sketchfab.com/wintrez), CC BY 4.0, https://sketchfab.com/3d-models/tesla-m3-model-3a602469d7874d1397efa67182198705 (modified) — tesla_model3.glb
+- "- NISSAN MICRA -" by Nissan France (https://sketchfab.com/NissanFR), CC BY 4.0, https://sketchfab.com/3d-models/nissan-micra-66aa00a8fd2c44498d1541c399df3673 (modified) — nissan_micra.glb
+- "OPEL Astra GTC 2012" by Comrade1280 (https://sketchfab.com/comrade1280), CC BY 4.0, https://sketchfab.com/3d-models/opel-astra-gtc-2012-d76ad5a0495443eda24a9052565ef9a8 (modified) — opel_astra_gtc.glb
+
+Pipeline: scripts/demo/parking/cars_lod.py (Blender 5.2), scripts/demo/parking/cars-pack.mjs (glTF-Transform, sharp).
+
+==============================================================================
+Активы / Assets: kiosk/bake/ (ATTRIBUTION.md)
+==============================================================================
+
+# Запечённый свет kiosk (KB) — происхождение
+
+Пакет KB волны K1 (docs/design/kiosk.md §6.4, контракт §А.2). Загрузок нет: квота KB — 0 МБ, сторонних файлов в этой папке нет.
+
+| Файл | Что | Откуда | Лицензия | Размер |
+|---|---|---|---|---|
+| `ext/core.glb` | геометрия ядра экстерьера: меши атлас × класс (matte / gloss / metal, интерьер куба) | грани лёгкой модели Dostyk из копии сцены роликов (`D:/BlenderWork/video/exterior/exterior.blend` → своя копия), развёртка Blender; `scripts/kiosk/blender/bake_ext.py`, `pack-ext.mjs` | своё (проект) | ≈ 1,2 МБ |
+| `ext/{W1,W2,W3,R,G}.jpg` | альбедо 4096 (процедурные материалы сцены роликов) | запекание Cycles (Blender 5.2), `bake_ext.py` | своё | ≈ 1,3 МБ |
+| `ext/*-l.jpg` | R — AO 4 м, G — вечерний свет (фонари, подсветка, куб, павильон), B — свечение; 2048 | запекание Cycles + шумодав OIDN | своё | ≈ 3,4 МБ |
+| `ext/*-d.jpg` | дневной рассеянный свет: небо (Nishita, солнце 320° / 38°) и отражённый свет солнца; 2048 | запекание Cycles + шумодав OIDN, сведение `pack-ext.mjs` | своё | ≈ 2,1 МБ |
+| `ext/bake.json` | шкалы и калибровка | `pack-ext.mjs` | своё | 2 КиБ |
+
+Деревья в запекании — деревья KX (`refs-local/k1/KX/export/ext-static.glb`, процедурные, свои). Людей и камер наблюдения в сцене нет
+(удалены в копии; список имён — отчёт KB). Приёмы запекания (зонд нормировки, шумодав по атласу, заливка пустот пирамидой) перенесены
+из проекта Shymkent Plaza (тот же владелец, `scripts/blender/bake_gi.py`).
+
+==============================================================================
+Активы / Assets: kiosk/exterior/ (ATTRIBUTION.md)
+==============================================================================
+
+# Активы экстерьера kiosk (KX) — происхождение
+
+Пакет KX волны K1 (docs/design/kiosk.md §6.1). Загрузок CC0 нет: 0 МБ из квоты 230 МБ.
+Почему: в запросе пользователя (17.10.2026) нет прямого «да» на скачивание файлов. Всё нарисовано кодом.
+Конвейер примет CC0-карты Poly Haven или ambientCG тем же форматом, если пользователь разрешит скачивание.
+
+| Файл | Что | Откуда | Лицензия | Размер |
+|---|---|---|---|---|
+| `foliage.webp` | атлас листвы, 20 ячеек: породы Алматы, кусты, трава, цветы | `scripts/kiosk/exterior/foliage-atlas.mjs` (SVG → sharp), процедурно | своё (проект) | ≈ 1,0 МБ |
+| `bark.jpg` | кора | там же (`barkTexture`, feTurbulence), процедурно | своё | ≈ 83 КиБ |
+| `ground-{pave,stone,asph,conc,grass}-{a,n}.jpg` | фактура земли: альбедо-множитель, нормаль и шероховатость | `scripts/kiosk/exterior/ground-textures.mjs`, процедурно | своё | ≈ 11,9 МБ |
+| `street.json` | места деревьев, машин, фонарей; ячейки атласа | `scripts/kiosk/exterior/build-street.mjs`: лёгкая модель Dostyk, места DX (`assets/demo/exterior/trees.json`), OSM `data/context.json` (tree_row, wood, forest, park) | данные OSM — ODbL 1.0 (© участники OpenStreetMap); остальное — своё | ≈ 0,2 МБ |
+
+Приёмы перенесены из проекта Shymkent Plaza (тот же владелец, коммит `44dc72b`): атлас листвы, процедурные деревья, машины,
+предметы, фактура земли, вид кадра. В шапке каждого файла указано, откуда перенесено.
+
+==============================================================================
+Активы / Assets: kiosk/interior/ (ATTRIBUTION.md)
+==============================================================================
+
+# Интерьер kiosk (K1 KF) — сторонние материалы
+
+Все загрузки — CC0 1.0 (общественное достояние), атрибуция не требуется; список ведётся по правилу K1 (docs/design/kiosk.md §6.0).
+Сырьё — `refs-local/k1/KF/dl/` (не в git); в продукт — уменьшенное через sharp.
+
+| Что | Откуда | Лицензия | На диске (сырьё) | В продукте | Дата | Где используется |
+|---|---|---|---|---|---|---|
+| Marble 014 (2K JPG: Color, Roughness) | https://ambientcg.com/view?id=Marble014 | CC0 1.0 | 14,8 МБ zip + 14,8 МБ распаковано | `tex/marble-l1.webp` 2,5 МБ (2048², RGB альбедо + A шероховатость) | 2026-10-17 | пол галерей L1 (`kf-floors.js`) |
+| Marble 021 (2K JPG: Color, Roughness) | https://ambientcg.com/view?id=Marble021 | CC0 1.0 | 11,4 МБ zip + 11,4 МБ распаковано | `tex/marble-l23.webp` 1,4 МБ (2048², RGB + A) | 2026-10-17 | пол галерей L2–L3 (`kf-floors.js`) |
+| Превью-картинки для выбора (Poly Haven, ambientCG) | cdn.polyhaven.com, acg-media.struffelproductions.com | CC0 1.0 | 3,2 МБ | — | 2026-10-17 | только выбор материала |
+| Potted Plant 01 (glTF 1k: геометрия, текстуры листвы и ствола) | https://polyhaven.com/a/potted_plant_01 | CC0 1.0 | 6,3 МБ | — (опыт: кроны кадок; на снимках k1-KF-v8k листва «висела» вокруг кадки и не закрывала крону лёгкой версии — отклонено, в продукт не вошло) | 2026-10-17 | — |
+
+Не загрузка (доисправления KF, 2026-10-17): `tex/plant.webp` (640², 37 КиБ) — ячейка «apple» процедурного атласа листвы KX
+`assets/kiosk/exterior/foliage.webp` (scripts/kiosk/exterior/foliage-atlas.mjs, без сторонних материалов); листва деревьев в кадках (`kf-floors.js`).
