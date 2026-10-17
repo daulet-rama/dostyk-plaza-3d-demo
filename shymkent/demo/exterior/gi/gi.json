@@ -1,0 +1,196 @@
+{
+ "version": 1,
+ "site": "shymkent-plaza",
+ "scheme": "open-data",
+ "built": "2026-10-16T22:21:13.884Z",
+ "key": "s2-B3",
+ "note": "Полное запекание света (GI) Cycles: Blender 5.2, сцена кадров (detail.raw.glb X3a, деревья, машины, фонари, витрины) по UV2 статической сцены X3a. Без фото и загрузок; всё условно.",
+ "geometry": {
+  "glb": "dist/model/bake/shymkent-exterior.static.glb",
+  "json": "dist/model/bake/shymkent-exterior.static.json",
+  "uv": "TEXCOORD_1 (в glb — то же и в TEXCOORD_0)",
+  "meshes": "меш BK_<атлас>__<часть> → атлас <атлас>; заменяет ту же часть детальной модели (материал — то же имя)"
+ },
+ "presets": {
+  "day": {
+   "sun": {
+    "az": 300,
+    "el": 38
+   },
+   "note": "солнце сайта «для показа» (site.config.js sun.artistic.day), небо Blender MULTIPLE_SCATTERING, ясное"
+  },
+  "eve": {
+   "sun": {
+    "az": 288,
+    "el": 16
+   },
+   "note": "sun.artistic.evening; фонари и свечение — отдельно (lamp)"
+  }
+ },
+ "normalization": "Освещённость L (день, вечер, фонари) — линейная, в долях освещённости открытой горизонтальной площадки днём по самому яркому каналу (зонд: probe.day = (0,71; 0,81; 1,0) — небо Blender синеватое). Баланс белого: L / probe.day по каналам → открытая площадка днём = (1, 1, 1), тень — голубее (свет неба). Диффузный цвет = альбедо · L · K (K — яркость «белого на солнце» в шкале сайта).",
+ "probe": {
+  "day": [
+   0.7112252829855608,
+   0.8084426216930699,
+   1
+  ],
+  "eve": [
+   0.34267934905419234,
+   0.37706941531640126,
+   0.4800419588086809
+  ],
+  "amb": [
+   0.999955701828003,
+   0.9999608874320984,
+   0.9999682784080506
+  ]
+ },
+ "encoding": {
+  "albedo": "sRGB (цвет материалов днём, как в кадрах Cycles), линейное = sRGB→linear",
+  "day": {
+   "scale": 1.1267566680908203,
+   "gamma": 2.2,
+   "decode": "L = scale · pow(v, gamma), v — линейное значение текстуры (NoColorSpace / LinearSRGB без перевода)"
+  },
+  "eve": {
+   "scale": 0.8689053058624268,
+   "gamma": 2.2,
+   "decode": "L = scale · pow(v, gamma)"
+  },
+  "lamp": {
+   "scale": 6.766153335571289,
+   "gamma": 3,
+   "decode": "L = scale · pow(v, gamma); только искусственный свет (227 фонарей, LED, софиты, вывески, витрины, магазины за стеклом), без неба"
+  },
+  "mask": {
+   "R": "видимость солнца дня (0 — тень, 1 — солнце; мягкая)",
+   "G": "видимость солнца вечера",
+   "B": "сила ночного свечения материала: S = B² · 1.2 (emitMax)"
+  },
+  "amb": {
+   "gamma": 2.2,
+   "decode": "A = pow(v, gamma): освещённость от равномерного белого неба (1,0 — открытая площадка), с отражённым светом; серый JPEG"
+  }
+ },
+ "compose": [
+  "день: diffuse = albedo · day · K_day (свет уже с тенями деревьев, машин, здания; тень карты теней на этих мешах не принимать — двойная тень)",
+  "вечер: diffuse = albedo · (eve · K_eve + lamp · K_lamp_eve) + emissive(mask.B)",
+  "ночь: diffuse = albedo · (amb · skyNight + lamp · K_lamp_night) + emissive(mask.B)",
+  "блики: солнце — × mask.R (день) / mask.G (вечер); окружение (skyEnvTexture X3a) — × amb (затенённые места не блестят небом)",
+  "режим «солнце как в жизни» (другое направление): diffuse = albedo · (sunColor · max(N·L,0) · shadowMap + skyColor · amb), без day/eve"
+ ],
+ "atlases": {
+  "W1": {
+   "files": {
+    "albedo": "W1-albedo.jpg",
+    "day": "W1-day.jpg",
+    "eve": "W1-eve.jpg",
+    "lamp": "W1-lamp.jpg",
+    "mask": "W1-mask.jpg",
+    "amb": "W1-amb.jpg"
+   },
+   "sizes": {
+    "albedo": 4096,
+    "day": 4096,
+    "eve": 4096,
+    "lamp": 2048,
+    "mask": 2048,
+    "amb": 2048
+   },
+   "texelCm": 2.52,
+   "coverage": 0.802,
+   "group": "W",
+   "meshPrefix": "BK_W1__"
+  },
+  "W2": {
+   "files": {
+    "albedo": "W2-albedo.jpg",
+    "day": "W2-day.jpg",
+    "eve": "W2-eve.jpg",
+    "lamp": "W2-lamp.jpg",
+    "mask": "W2-mask.jpg",
+    "amb": "W2-amb.jpg"
+   },
+   "sizes": {
+    "albedo": 4096,
+    "day": 4096,
+    "eve": 4096,
+    "lamp": 2048,
+    "mask": 2048,
+    "amb": 2048
+   },
+   "texelCm": 2.52,
+   "coverage": 0.822,
+   "group": "W",
+   "meshPrefix": "BK_W2__"
+  },
+  "R1": {
+   "files": {
+    "albedo": "R1-albedo.jpg",
+    "day": "R1-day.jpg",
+    "eve": "R1-eve.jpg",
+    "lamp": "R1-lamp.jpg",
+    "mask": "R1-mask.jpg",
+    "amb": "R1-amb.jpg"
+   },
+   "sizes": {
+    "albedo": 4096,
+    "day": 4096,
+    "eve": 4096,
+    "lamp": 2048,
+    "mask": 2048,
+    "amb": 2048
+   },
+   "texelCm": 4.54,
+   "coverage": 0.648,
+   "group": "R",
+   "meshPrefix": "BK_R1__"
+  },
+  "G1": {
+   "files": {
+    "albedo": "G1-albedo.jpg",
+    "day": "G1-day.jpg",
+    "eve": "G1-eve.jpg",
+    "lamp": "G1-lamp.jpg",
+    "mask": "G1-mask.jpg",
+    "amb": "G1-amb.jpg"
+   },
+   "sizes": {
+    "albedo": 4096,
+    "day": 4096,
+    "eve": 4096,
+    "lamp": 2048,
+    "mask": 2048,
+    "amb": 2048
+   },
+   "texelCm": 6.06,
+   "coverage": 0.89,
+   "group": "G",
+   "meshPrefix": "BK_G1__"
+  },
+  "C1": {
+   "files": {
+    "albedo": "C1-albedo.jpg",
+    "day": "C1-day.jpg",
+    "eve": "C1-eve.jpg",
+    "lamp": "C1-lamp.jpg",
+    "mask": "C1-mask.jpg",
+    "amb": "C1-amb.jpg"
+   },
+   "sizes": {
+    "albedo": 4096,
+    "day": 2048,
+    "eve": 2048,
+    "lamp": 2048,
+    "mask": 2048,
+    "amb": 2048
+   },
+   "texelCm": 12.63,
+   "coverage": 0.717,
+   "group": "C",
+   "meshPrefix": "BK_C1__"
+  }
+ },
+ "bytes": 25961645,
+ "vramMB": 1472
+}

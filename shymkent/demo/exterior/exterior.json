@@ -1,0 +1,50 @@
+{
+ "version": 1,
+ "site": "shymkent-plaza",
+ "scheme": "open-data",
+ "built": "2026-10-16T16:54:21.695Z",
+ "profile": "demo",
+ "atlases": [
+  "W1",
+  "W2",
+  "W3",
+  "R",
+  "G"
+ ],
+ "sizes": {
+  "W1": {
+   "albedo": 4096,
+   "light": 2048
+  },
+  "W2": {
+   "albedo": 4096,
+   "light": 2048
+  },
+  "W3": {
+   "albedo": 4096,
+   "light": 2048
+  },
+  "R": {
+   "albedo": 4096,
+   "light": 2048
+  },
+  "G": {
+   "albedo": 8192,
+   "light": 4096
+  }
+ },
+ "scales": {
+  "duskMax": 4.040066242218018,
+  "emitMax": 1
+ },
+ "aoDist": 4,
+ "texelCm": {
+  "W1": 1.89,
+  "W2": 1.9,
+  "W3": 1.93,
+  "R": 4.21,
+  "G": 2.58
+ },
+ "tris": 48573,
+ "trees": 0
+}
